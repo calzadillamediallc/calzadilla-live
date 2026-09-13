@@ -23,6 +23,30 @@ pnpm exec playwright install chromium
 The repository intentionally excludes `.env` files, `node_modules`, browser
 reports, test results and coverage output.
 
+## Supabase environment configuration
+
+The deployed production pages load `config/supabase.production.js`. Localhost
+and `file:` pages instead require the generated, gitignored staging
+configuration. They do not fall back to production when that file is missing.
+
+Create the local environment file and add the staging publishable/anon key:
+
+```sh
+cp .env.example .env
+# Edit .env and set SUPABASE_TEST_ANON_KEY.
+pnpm run config:staging
+```
+
+This generates `config/supabase.staging.generated.js` with permissions limited
+to the local user. Both `.env` and the generated JavaScript file are ignored by
+Git. Never use a production key or a service-role key in either location.
+
+The generator and integration tests refuse to target any Supabase host other
+than the dedicated `awlwuzvcmdgevthoecav` staging project. A hosted develop
+preview can select the generated staging configuration with
+`?supabase=staging`; the generated file must be supplied by that preview's
+deployment process.
+
 ## Run tests
 
 Current intended behavior:
@@ -47,8 +71,14 @@ Future Supabase integration tests:
 
 ```sh
 cp .env.example .env
-# Fill in credentials for a dedicated non-production Supabase project.
+# Set SUPABASE_TEST_ANON_KEY to the staging publishable/anon key.
 pnpm run test:integration
+```
+
+Generate the browser configuration and run the integration contract together:
+
+```sh
+pnpm run test:staging
 ```
 
 The integration test is skipped when `SUPABASE_TEST_URL` or
@@ -72,9 +102,10 @@ Recorded on 2026-09-13 from branch `develop`:
 - Original current-behavior unit/state tests: **27 passing**
 - Phase 2 safety edge-case tests: **6 passing**
 - Audited production-bug regressions: **11 passing**
+- Supabase configuration-isolation tests: **3 passing**
 - Isolated Playwright browser tests: **3 passing**
 - Future Supabase integration tests: **1 skipped** without test-project credentials
-- Complete local result: **47 passing, 0 failing, 1 skipped**
+- Complete local result: **50 passing, 0 failing, 1 skipped**
 
 All **29 tests that passed before Phase 2** remain green: the original 27 unit
 tests and 2 browser tests.

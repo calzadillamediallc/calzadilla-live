@@ -10,6 +10,11 @@ async function installIsolatedSupabase(page) {
   );
 
   await page.addInitScript(() => {
+    window.CALZADILLA_STAGING_SUPABASE_CONFIG = Object.freeze({
+      url: "https://browser-test.invalid",
+      anonKey: "browser-test-anon-key"
+    });
+
     const tables = {
       live_games: [
         {
@@ -160,6 +165,9 @@ test("control center renders isolated game state without production Supabase", a
 
   await page.goto("/index.html");
 
+  await expect.poll(() =>
+    page.evaluate(() => window.CALZADILLA_SUPABASE_ENVIRONMENT)
+  ).toBe("staging");
   await expect(page.locator("#connectionStatus")).toContainText("Supabase Connected");
   await expect(page.locator("#awayName")).toHaveText("VISITORS");
   await expect(page.locator("#homeName")).toHaveText("HOSTS");
@@ -182,6 +190,9 @@ test("broadcast overlay renders isolated game state and assets", async ({ page }
 
   await page.goto("/overlay.html");
 
+  await expect.poll(() =>
+    page.evaluate(() => window.CALZADILLA_SUPABASE_ENVIRONMENT)
+  ).toBe("staging");
   await expect(page.locator("#awayName")).toHaveText("VISITORS");
   await expect(page.locator("#homeName")).toHaveText("HOSTS");
   await expect(page.locator("#awayOnes")).toHaveText("3");

@@ -6,6 +6,9 @@
   <title>Calzadilla Live — Baseball Control Center</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config/supabase.production.js"></script>
+  <script src="config/supabase.environment.js"></script>
+  <script src="config/supabase.resolve.js"></script>
 
   <style>
     * { box-sizing: border-box; }
@@ -866,8 +869,8 @@
 </div>
 
 <script>
-const SUPABASE_URL = "https://smaqspbeeouzgbwskbnx.supabase.co";
-const SUPABASE_KEY = "sb_publishable_AoFWsp2Dt_JzdrRm5bF8Tw_zdbOEs1x";
+const SUPABASE_URL = window.CALZADILLA_SUPABASE_CONFIG.url;
+const SUPABASE_KEY = window.CALZADILLA_SUPABASE_CONFIG.anonKey;
 const GAME_CODE = "TEST001";
 
 const MAX_LINEUP = 12;

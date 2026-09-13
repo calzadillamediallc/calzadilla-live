@@ -5,4 +5,4 @@ coverage/
 .env
 .env.*
 !.env.example
-
+config/supabase.staging.generated.js

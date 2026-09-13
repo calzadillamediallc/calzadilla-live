@@ -41,6 +41,11 @@ export async function loadControlApp(options = {}) {
 
   const { window } = dom;
 
+  window.CALZADILLA_SUPABASE_CONFIG = Object.freeze({
+    url: "https://unit-test.invalid",
+    anonKey: "unit-test-anon-key"
+  });
+
   window.supabase = {
     createClient() {
       return fake.client;

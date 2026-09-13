@@ -1,18 +1,37 @@
 import { describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 
+const STAGING_SUPABASE_HOST = "awlwuzvcmdgevthoecav.supabase.co";
+const testUrl = process.env.SUPABASE_TEST_URL || "";
+const testAnonKey = process.env.SUPABASE_TEST_ANON_KEY || "";
+const hasAnyIntegrationEnvironment = Boolean(testUrl || testAnonKey);
 const hasIntegrationEnvironment = Boolean(
-  process.env.SUPABASE_TEST_URL && process.env.SUPABASE_TEST_ANON_KEY
+  testUrl && testAnonKey
 );
+
+if (hasAnyIntegrationEnvironment && !hasIntegrationEnvironment) {
+  throw new Error(
+    "Set both SUPABASE_TEST_URL and SUPABASE_TEST_ANON_KEY for staging tests."
+  );
+}
+
+if (
+  hasIntegrationEnvironment &&
+  new URL(testUrl).hostname !== STAGING_SUPABASE_HOST
+) {
+  throw new Error(
+    `Refusing to run Supabase tests outside ${STAGING_SUPABASE_HOST}.`
+  );
+}
 
 describe.skipIf(!hasIntegrationEnvironment)("Supabase test-project contract", () => {
   it("exposes the Phase 2 live-game continuity fields", async () => {
-    expect(process.env.SUPABASE_TEST_URL).toMatch(/^https?:\/\//);
-    expect(process.env.SUPABASE_TEST_ANON_KEY).toBeTruthy();
+    expect(testUrl).toMatch(/^https:\/\//);
+    expect(testAnonKey).toBeTruthy();
 
     const client = createClient(
-      process.env.SUPABASE_TEST_URL,
-      process.env.SUPABASE_TEST_ANON_KEY,
+      testUrl,
+      testAnonKey,
       {
         auth: {
           persistSession: false,
