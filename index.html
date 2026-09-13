@@ -556,7 +556,7 @@
 <div class="container">
 
   <h1>Calzadilla Live</h1>
-  <div class="subtitle">Baseball Control Center</div>
+  <div class="subtitle">Baseball Control Center — RESET FIX v2</div>
   <div id="connectionStatus" class="status">Connecting...</div>
 
   <div class="card">
@@ -1867,23 +1867,138 @@ async function startNewGame() {
       away +
       " vs " +
       home +
-      "\n\nThis will erase the current score, inning, count, bases, pitchers, pitch counts, Game Log AND both team lineups/substitutes."
+      "\n\nTHIS WILL DELETE:\n" +
+      "• Score / inning / count / bases\n" +
+      "• Pitchers and pitch counts\n" +
+      "• Game Log\n" +
+      "• Active Lineups\n" +
+      "• Substitutes\n" +
+      "• Used / Out players"
     );
 
   if (!confirmed) {
     return;
   }
 
-  currentBatterIndex = {
-    away: 0,
-    home: 0
-  };
+  el("connectionStatus").innerText =
+    "Resetting new game...";
 
-  pinchHitContext = {
-    away: null,
-    home: null
-  };
+  /*
+    1. CLEAR GAME EVENTS FIRST
+       This is important if game_events.batter_id references game_rosters.id.
+  */
+  const {
+    data: deletedEvents,
+    error: eventDeleteError
+  } =
+    await db
+      .from("game_events")
+      .delete()
+      .eq("game_code", GAME_CODE)
+      .select("id");
 
+  if (eventDeleteError) {
+    console.error(
+      "START NEW GAME — GAME EVENTS DELETE ERROR:",
+      eventDeleteError
+    );
+
+    el("connectionStatus").innerText =
+      "RESET ERROR — Game Log";
+
+    alert(
+      "Could not clear Game Log:\n" +
+      eventDeleteError.message
+    );
+
+    return;
+  }
+
+  /*
+    2. DELETE ALL ROSTER ROWS AND VERIFY THE DELETE.
+  */
+  const {
+    data: deletedRosterRows,
+    error: rosterDeleteError
+  } =
+    await db
+      .from("game_rosters")
+      .delete()
+      .eq("game_code", GAME_CODE)
+      .select("id, team_side, player_name");
+
+  if (rosterDeleteError) {
+    console.error(
+      "START NEW GAME — ROSTER DELETE ERROR:",
+      rosterDeleteError
+    );
+
+    el("connectionStatus").innerText =
+      "RESET ERROR — Roster";
+
+    alert(
+      "Could not clear lineups:\n" +
+      rosterDeleteError.message
+    );
+
+    return;
+  }
+
+  console.log(
+    "DELETED ROSTER ROWS:",
+    deletedRosterRows
+  );
+
+  /*
+    3. VERIFY DATABASE REALLY HAS ZERO ROSTER ROWS.
+  */
+  const {
+    data: remainingRosterRows,
+    error: rosterVerifyError
+  } =
+    await db
+      .from("game_rosters")
+      .select("id")
+      .eq("game_code", GAME_CODE);
+
+  if (rosterVerifyError) {
+    console.error(
+      "START NEW GAME — ROSTER VERIFY ERROR:",
+      rosterVerifyError
+    );
+
+    alert(
+      "Roster delete verification failed:\n" +
+      rosterVerifyError.message
+    );
+
+    return;
+  }
+
+  if (
+    remainingRosterRows &&
+    remainingRosterRows.length > 0
+  ) {
+    console.error(
+      "ROSTER ROWS STILL EXIST:",
+      remainingRosterRows
+    );
+
+    el("connectionStatus").innerText =
+      "RESET ERROR — Roster still exists";
+
+    alert(
+      "The roster was NOT deleted.\n\n" +
+      remainingRosterRows.length +
+      " roster row(s) still exist in Supabase."
+    );
+
+    return;
+  }
+
+  /*
+    4. RESET THE LIVE GAME ROW.
+  */
   const resetData = {
     away_team:
       away.toUpperCase(),
@@ -1941,102 +2056,65 @@ async function startNewGame() {
   };
 
   const {
-    data,
-    error
+    data: resetGame,
+    error: gameResetError
   } =
     await db
       .from("live_games")
       .update(resetData)
-      .eq(
-        "game_code",
-        GAME_CODE
-      )
+      .eq("game_code", GAME_CODE)
       .select()
       .single();
 
-  if (error) {
+  if (gameResetError) {
     console.error(
-      "START NEW GAME RESET ERROR:",
-      error
+      "START NEW GAME — LIVE GAME RESET ERROR:",
+      gameResetError
     );
 
+    el("connectionStatus").innerText =
+      "RESET ERROR — Scoreboard";
+
     alert(
-      "Could not start new game:\n" +
-      error.message
+      "Roster was cleared, but the scoreboard reset failed:\n" +
+      gameResetError.message
     );
 
     return;
   }
 
-  game = data;
+  game =
+    resetGame;
 
   /*
-    Delete the old Game Log.
-  */
-  const {
-    error:
-      logError
-  } =
-    await db
-      .from("game_events")
-      .delete()
-      .eq(
-        "game_code",
-        GAME_CODE
-      );
-
-  if (logError) {
-    console.error(
-      "CLEAR GAME LOG ERROR:",
-      logError
-    );
-
-    alert(
-      "The game reset, but the Game Log could not be cleared:\n" +
-      logError.message
-    );
-
-    return;
-  }
-
-  /*
-    Delete the complete roster for BOTH teams:
-    - Active lineup
-    - Substitutes
-    - Used / Out
-  */
-  const {
-    error:
-      rosterError
-  } =
-    await db
-      .from("game_rosters")
-      .delete()
-      .eq(
-        "game_code",
-        GAME_CODE
-      );
-
-  if (rosterError) {
-    console.error(
-      "CLEAR ROSTER ERROR:",
-      rosterError
-    );
-
-    alert(
-      "The game reset, but the lineups could not be cleared:\n" +
-      rosterError.message
-    );
-
-    return;
-  }
-
-  /*
-    Clear local roster state immediately.
+    5. CLEAR ALL LOCAL STATE.
   */
   rosters = {
     away: [],
     home: []
+  };
+
+  currentBatterIndex = {
+    away: 0,
+    home: 0
+  };
+
+  pinchHitContext = {
+    away: null,
+    home: null
+  };
+
+  clearTimeout(
+    autosaveTimers.away
+  );
+
+  clearTimeout(
+    autosaveTimers.home
+  );
+
+  autosaveTimers = {
+    away: null,
+    home: null
   };
 
   setAutosaveStatus(
@@ -2049,19 +2127,27 @@ async function startNewGame() {
     "AutoSave ready"
   );
 
-  render();
-
+  /*
+    6. RELOAD EVERYTHING FROM DATABASE.
+       This guarantees the screen matches Supabase.
+  */
+  await loadRosters();
   await loadGameEvents();
 
-  renderRosterManager();
-  renderCurrentBatter();
+  render();
+
+  el("connectionStatus").innerText =
+    "● LIVE — Supabase Connected";
 
   alert(
-    "New game ready!\n\n" +
+    "NEW GAME READY!\n\n" +
     away.toUpperCase() +
     " vs " +
     home.toUpperCase() +
-    "\n\nScore, Game Log and both rosters were cleared."
+    "\n\nDeleted roster players: " +
+    (deletedRosterRows?.length || 0) +
+    "\nDeleted Game Log events: " +
+    (deletedEvents?.length || 0)
   );
 }
 
