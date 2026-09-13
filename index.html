@@ -8,7 +8,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -23,7 +25,9 @@
       margin: auto;
     }
 
-    h1 { margin: 0 0 4px; }
+    h1 {
+      margin: 0 0 4px;
+    }
 
     .subtitle {
       color: #999;
@@ -64,7 +68,9 @@
       margin: 12px 0;
     }
 
-    .vs { color: #777; }
+    .vs {
+      color: #777;
+    }
 
     button {
       border: 0;
@@ -78,14 +84,29 @@
       font-size: 14px;
     }
 
-    button:active { transform: scale(.97); }
+    button:active {
+      transform: scale(.97);
+    }
 
-    .green { background: #168b58; }
-    .red { background: #bd2e3d; }
-    .blue { background: #1769aa; }
-    .orange { background: #bd691d; }
+    .green {
+      background: #168b58;
+    }
 
-    .center { text-align: center; }
+    .red {
+      background: #bd2e3d;
+    }
+
+    .blue {
+      background: #1769aa;
+    }
+
+    .orange {
+      background: #bd691d;
+    }
+
+    .center {
+      text-align: center;
+    }
 
     .inning-display {
       font-size: 25px;
@@ -161,27 +182,29 @@
       outline: 2px solid #168b58;
     }
 
-    /* DIAMOND */
+    /* =========================
+       COMPACT BASEBALL DIAMOND
+    ========================== */
 
     .field-wrap {
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 18px 0 8px;
+      padding: 4px 0 0;
     }
 
     .field {
       position: relative;
-      width: 280px;
-      height: 240px;
+      width: 190px;
+      height: 170px;
     }
 
     .field-line {
       position: absolute;
       left: 50%;
-      top: 58%;
-      width: 165px;
-      height: 165px;
+      top: 48%;
+      width: 104px;
+      height: 104px;
       border-left: 2px solid rgba(255,255,255,.12);
       border-top: 2px solid rgba(255,255,255,.12);
       transform: translate(-50%, -50%) rotate(45deg);
@@ -190,14 +213,14 @@
 
     .base-node {
       position: absolute;
-      width: 64px;
-      height: 64px;
+      width: 48px;
+      height: 48px;
       background: #191c21;
-      border: 3px solid #7a7f86;
+      border: 2px solid #7a7f86;
       transform: rotate(45deg);
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       cursor: pointer;
       transition: .15s ease;
       user-select: none;
@@ -206,51 +229,46 @@
     .base-node span {
       transform: rotate(-45deg);
       font-weight: 800;
-      font-size: 13px;
+      font-size: 11px;
     }
 
     .base-node.active {
       background: #f0c33c;
       border-color: #ffe27a;
       color: #101010;
-      box-shadow: 0 0 18px rgba(240,195,60,.35);
+      box-shadow: 0 0 14px rgba(240,195,60,.3);
     }
 
     #baseSecond {
-      left: 108px;
-      top: 5px;
+      left: 71px;
+      top: 4px;
     }
 
     #baseThird {
-      left: 28px;
-      top: 92px;
+      left: 20px;
+      top: 58px;
     }
 
     #baseFirst {
-      right: 28px;
-      top: 92px;
+      right: 20px;
+      top: 58px;
     }
 
     .home-plate {
       position: absolute;
-      left: 116px;
-      bottom: 5px;
-      width: 48px;
-      height: 38px;
-      background: #f5f5f5;
-      clip-path: polygon(0 0, 100% 0, 84% 65%, 50% 100%, 16% 65%);
-      opacity: .8;
-    }
-
-    .field-center {
-      position: absolute;
-      left: 50%;
-      top: 49%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      color: #7d838b;
-      font-size: 12px;
-      line-height: 1.3;
+      left: 76px;
+      bottom: 8px;
+      width: 38px;
+      height: 30px;
+      background: #e5e5e5;
+      clip-path: polygon(
+        0 0,
+        100% 0,
+        84% 65%,
+        50% 100%,
+        16% 65%
+      );
+      opacity: .78;
     }
 
     .notice {
@@ -263,7 +281,9 @@
     }
 
     @media(max-width: 650px) {
-      body { padding: 12px; }
+      body {
+        padding: 12px;
+      }
 
       .scoreboard {
         grid-template-columns: 1fr 50px 1fr;
@@ -274,10 +294,8 @@
         grid-template-columns: 1fr;
       }
 
-      .score { font-size: 42px; }
-
-      .field {
-        transform: scale(.9);
+      .score {
+        font-size: 42px;
       }
     }
   </style>
@@ -289,82 +307,223 @@
 
   <h1>Calzadilla Live</h1>
   <div class="subtitle">Baseball Control Center</div>
-  <div id="connectionStatus" class="status">Connecting...</div>
+
+  <div id="connectionStatus" class="status">
+    Connecting...
+  </div>
 
   <div class="card scoreboard">
-    <div>
-      <div id="homeName" class="team-name">HOME</div>
-      <div id="homeScore" class="score">0</div>
-      <button class="red" onclick="changeScore('home',-1)">−</button>
-      <button class="green" onclick="changeScore('home',1)">+1</button>
-    </div>
-
-    <div class="vs">VS</div>
 
     <div>
-      <div id="awayName" class="team-name">AWAY</div>
-      <div id="awayScore" class="score">0</div>
-      <button class="red" onclick="changeScore('away',-1)">−</button>
-      <button class="green" onclick="changeScore('away',1)">+1</button>
+      <div id="homeName" class="team-name">
+        HOME
+      </div>
+
+      <div id="homeScore" class="score">
+        0
+      </div>
+
+      <button
+        class="red"
+        onclick="changeScore('home', -1)">
+        −
+      </button>
+
+      <button
+        class="green"
+        onclick="changeScore('home', 1)">
+        +1
+      </button>
     </div>
+
+    <div class="vs">
+      VS
+    </div>
+
+    <div>
+      <div id="awayName" class="team-name">
+        AWAY
+      </div>
+
+      <div id="awayScore" class="score">
+        0
+      </div>
+
+      <button
+        class="red"
+        onclick="changeScore('away', -1)">
+        −
+      </button>
+
+      <button
+        class="green"
+        onclick="changeScore('away', 1)">
+        +1
+      </button>
+    </div>
+
   </div>
 
   <div class="card center">
+
     <strong>Inning</strong>
 
-    <div id="inningDisplay" class="inning-display">TOP 1</div>
+    <div
+      id="inningDisplay"
+      class="inning-display">
+      TOP 1
+    </div>
 
-    <button onclick="toggleHalf()">TOP / BOTTOM</button>
-    <button onclick="changeInning(-1)">− Inning</button>
-    <button onclick="changeInning(1)">+ Inning</button>
+    <button onclick="toggleHalf()">
+      TOP / BOTTOM
+    </button>
+
+    <button onclick="changeInning(-1)">
+      − Inning
+    </button>
+
+    <button onclick="changeInning(1)">
+      + Inning
+    </button>
+
   </div>
 
   <div class="card">
+
     <strong>Pitch Controls</strong>
 
-    <div class="pitch-actions" style="margin-top:12px;">
-      <button class="green" onclick="ball()">BALL</button>
-      <button class="red" onclick="strike()">STRIKE</button>
-      <button class="orange" onclick="foul()">FOUL</button>
+    <div
+      class="pitch-actions"
+      style="margin-top:12px;">
+
+      <button
+        class="green"
+        onclick="ball()">
+        BALL
+      </button>
+
+      <button
+        class="red"
+        onclick="strike()">
+        STRIKE
+      </button>
+
+      <button
+        class="orange"
+        onclick="foul()">
+        FOUL
+      </button>
+
     </div>
 
-    <div class="center" style="margin-top:8px;">
-      <button onclick="resetCount()">RESET COUNT</button>
-      <button class="blue" onclick="manualOut()">+ OUT</button>
+    <div
+      class="center"
+      style="margin-top:8px;">
+
+      <button onclick="resetCount()">
+        RESET COUNT
+      </button>
+
+      <button
+        class="blue"
+        onclick="manualOut()">
+        + OUT
+      </button>
+
     </div>
+
   </div>
 
   <div class="card">
+
     <strong>Count</strong>
 
-    <div class="count-grid" style="margin-top:12px;">
+    <div
+      class="count-grid"
+      style="margin-top:12px;">
+
       <div class="count-box">
-        <div class="count-label">BALLS</div>
-        <div id="balls" class="count-number">0</div>
-        <button onclick="manualCount('balls',-1)">−</button>
-        <button onclick="manualCount('balls',1)">+</button>
+
+        <div class="count-label">
+          BALLS
+        </div>
+
+        <div
+          id="balls"
+          class="count-number">
+          0
+        </div>
+
+        <button
+          onclick="manualCount('balls', -1)">
+          −
+        </button>
+
+        <button
+          onclick="manualCount('balls', 1)">
+          +
+        </button>
+
       </div>
 
       <div class="count-box">
-        <div class="count-label">STRIKES</div>
-        <div id="strikes" class="count-number">0</div>
-        <button onclick="manualCount('strikes',-1)">−</button>
-        <button onclick="manualCount('strikes',1)">+</button>
+
+        <div class="count-label">
+          STRIKES
+        </div>
+
+        <div
+          id="strikes"
+          class="count-number">
+          0
+        </div>
+
+        <button
+          onclick="manualCount('strikes', -1)">
+          −
+        </button>
+
+        <button
+          onclick="manualCount('strikes', 1)">
+          +
+        </button>
+
       </div>
 
       <div class="count-box">
-        <div class="count-label">OUTS</div>
-        <div id="outs" class="count-number">0</div>
-        <button onclick="manualOut(-1)">−</button>
-        <button onclick="manualOut(1)">+</button>
+
+        <div class="count-label">
+          OUTS
+        </div>
+
+        <div
+          id="outs"
+          class="count-number">
+          0
+        </div>
+
+        <button onclick="manualOut(-1)">
+          −
+        </button>
+
+        <button onclick="manualOut(1)">
+          +
+        </button>
+
       </div>
+
     </div>
+
   </div>
 
+  <!-- RUNNERS -->
+
   <div class="card">
+
     <strong>Runners</strong>
 
     <div class="field-wrap">
+
       <div class="field">
 
         <div class="field-line"></div>
@@ -390,98 +549,174 @@
           <span>1B</span>
         </div>
 
-        <div class="field-center">
-          BASE<br>RUNNERS
-        </div>
-
         <div class="home-plate"></div>
 
       </div>
+
     </div>
+
   </div>
 
+  <!-- PITCHERS -->
+
   <div class="card">
+
     <strong>Pitchers</strong>
 
     <div class="notice">
       TOP = Home pitcher is active. BOTTOM = Away pitcher is active.
     </div>
 
-    <div class="pitcher-grid" style="margin-top:12px;">
+    <div
+      class="pitcher-grid"
+      style="margin-top:12px;">
 
-      <div id="homePitcherBox" class="pitcher">
-        <strong id="homePitcherTeam">HOME Pitcher</strong>
+      <div
+        id="homePitcherBox"
+        class="pitcher">
 
-        <input id="homePitcherNumber" placeholder="Jersey #">
-        <input id="homePitcherName" placeholder="Name (optional)">
+        <strong id="homePitcherTeam">
+          HOME Pitcher
+        </strong>
 
-        <button onclick="savePitcher('home')">SAVE PITCHER</button>
+        <input
+          id="homePitcherNumber"
+          placeholder="Jersey #">
 
-        <div class="count-label">PITCH COUNT</div>
-        <div id="homePitchCount" class="pitch-count">0</div>
+        <input
+          id="homePitcherName"
+          placeholder="Name (optional)">
 
-        <button onclick="adjustPitchCount('home',-1)">− Pitch</button>
-        <button onclick="adjustPitchCount('home',1)">+ Pitch</button>
+        <button onclick="savePitcher('home')">
+          SAVE PITCHER
+        </button>
+
+        <div class="count-label">
+          PITCH COUNT
+        </div>
+
+        <div
+          id="homePitchCount"
+          class="pitch-count">
+          0
+        </div>
+
+        <button
+          onclick="adjustPitchCount('home', -1)">
+          − Pitch
+        </button>
+
+        <button
+          onclick="adjustPitchCount('home', 1)">
+          + Pitch
+        </button>
 
         <br>
-        <button class="orange" onclick="newPitcher('home')">
+
+        <button
+          class="orange"
+          onclick="newPitcher('home')">
           PITCHING CHANGE
         </button>
+
       </div>
 
-      <div id="awayPitcherBox" class="pitcher">
-        <strong id="awayPitcherTeam">AWAY Pitcher</strong>
+      <div
+        id="awayPitcherBox"
+        class="pitcher">
 
-        <input id="awayPitcherNumber" placeholder="Jersey #">
-        <input id="awayPitcherName" placeholder="Name (optional)">
+        <strong id="awayPitcherTeam">
+          AWAY Pitcher
+        </strong>
 
-        <button onclick="savePitcher('away')">SAVE PITCHER</button>
+        <input
+          id="awayPitcherNumber"
+          placeholder="Jersey #">
 
-        <div class="count-label">PITCH COUNT</div>
-        <div id="awayPitchCount" class="pitch-count">0</div>
+        <input
+          id="awayPitcherName"
+          placeholder="Name (optional)">
 
-        <button onclick="adjustPitchCount('away',-1)">− Pitch</button>
-        <button onclick="adjustPitchCount('away',1)">+ Pitch</button>
+        <button onclick="savePitcher('away')">
+          SAVE PITCHER
+        </button>
+
+        <div class="count-label">
+          PITCH COUNT
+        </div>
+
+        <div
+          id="awayPitchCount"
+          class="pitch-count">
+          0
+        </div>
+
+        <button
+          onclick="adjustPitchCount('away', -1)">
+          − Pitch
+        </button>
+
+        <button
+          onclick="adjustPitchCount('away', 1)">
+          + Pitch
+        </button>
 
         <br>
-        <button class="orange" onclick="newPitcher('away')">
+
+        <button
+          class="orange"
+          onclick="newPitcher('away')">
           PITCHING CHANGE
         </button>
+
       </div>
 
     </div>
+
   </div>
 
 </div>
 
 <script>
+
 const SUPABASE_URL =
   "https://smaqspbeeouzgbwskbnx.supabase.co";
 
 const SUPABASE_KEY =
   "sb_publishable_AoFWsp2Dt_JzdrRm5bF8Tw_zdbOEs1x";
 
-const GAME_CODE = "TEST001";
+const GAME_CODE =
+  "TEST001";
 
-const db = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const db =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
 
 let game = null;
 
+
+/* =========================
+   LOAD GAME
+========================= */
+
 async function loadGame() {
 
-  const { data, error } = await db
-    .from("live_games")
-    .select("*")
-    .eq("game_code", GAME_CODE)
-    .single();
+  const { data, error } =
+    await db
+      .from("live_games")
+      .select("*")
+      .eq("game_code", GAME_CODE)
+      .single();
 
   if (error) {
+
     console.error(error);
 
-    document.getElementById("connectionStatus").innerText =
+    document.getElementById(
+      "connectionStatus"
+    ).innerText =
       "ERROR — " + error.message;
 
     return;
@@ -489,50 +724,107 @@ async function loadGame() {
 
   game = data;
 
-  document.getElementById("connectionStatus").innerText =
+  document.getElementById(
+    "connectionStatus"
+  ).innerText =
     "● LIVE — Supabase Connected";
 
   render();
 }
 
+
+/* =========================
+   RENDER
+========================= */
+
 function render() {
 
   if (!game) return;
 
-  homeName.innerText = game.home_team;
-  awayName.innerText = game.away_team;
+  homeName.innerText =
+    game.home_team;
 
-  homeScore.innerText = game.home_score;
-  awayScore.innerText = game.away_score;
+  awayName.innerText =
+    game.away_team;
 
-  balls.innerText = game.balls;
-  strikes.innerText = game.strikes;
-  outs.innerText = game.outs;
+  homeScore.innerText =
+    game.home_score;
+
+  awayScore.innerText =
+    game.away_score;
+
+  balls.innerText =
+    game.balls;
+
+  strikes.innerText =
+    game.strikes;
+
+  outs.innerText =
+    game.outs;
 
   inningDisplay.innerText =
-    game.inning_half.toUpperCase() + " " + game.inning;
+    game.inning_half.toUpperCase()
+    + " "
+    + game.inning;
 
-  baseFirst.classList.toggle("active", game.runner_first);
-  baseSecond.classList.toggle("active", game.runner_second);
-  baseThird.classList.toggle("active", game.runner_third);
+  baseFirst.classList.toggle(
+    "active",
+    game.runner_first
+  );
 
-  homePitchCount.innerText = game.home_pitch_count || 0;
-  awayPitchCount.innerText = game.away_pitch_count || 0;
+  baseSecond.classList.toggle(
+    "active",
+    game.runner_second
+  );
 
-  homePitcherTeam.innerText = game.home_team + " Pitcher";
-  awayPitcherTeam.innerText = game.away_team + " Pitcher";
+  baseThird.classList.toggle(
+    "active",
+    game.runner_third
+  );
 
-  if (document.activeElement !== homePitcherNumber)
-    homePitcherNumber.value = game.home_pitcher_number || "";
+  homePitchCount.innerText =
+    game.home_pitch_count || 0;
 
-  if (document.activeElement !== homePitcherName)
-    homePitcherName.value = game.home_pitcher_name || "";
+  awayPitchCount.innerText =
+    game.away_pitch_count || 0;
 
-  if (document.activeElement !== awayPitcherNumber)
-    awayPitcherNumber.value = game.away_pitcher_number || "";
+  homePitcherTeam.innerText =
+    game.home_team + " Pitcher";
 
-  if (document.activeElement !== awayPitcherName)
-    awayPitcherName.value = game.away_pitcher_name || "";
+  awayPitcherTeam.innerText =
+    game.away_team + " Pitcher";
+
+  if (
+    document.activeElement
+      !== homePitcherNumber
+  ) {
+    homePitcherNumber.value =
+      game.home_pitcher_number || "";
+  }
+
+  if (
+    document.activeElement
+      !== homePitcherName
+  ) {
+    homePitcherName.value =
+      game.home_pitcher_name || "";
+  }
+
+  if (
+    document.activeElement
+      !== awayPitcherNumber
+  ) {
+    awayPitcherNumber.value =
+      game.away_pitcher_number || "";
+  }
+
+  if (
+    document.activeElement
+      !== awayPitcherName
+  ) {
+    awayPitcherName.value =
+      game.away_pitcher_name || "";
+  }
 
   homePitcherBox.classList.toggle(
     "active-pitcher",
@@ -545,38 +837,67 @@ function render() {
   );
 }
 
+
+/* =========================
+   UPDATE
+========================= */
+
 async function updateGame(changes) {
 
-  const { data, error } = await db
-    .from("live_games")
-    .update(changes)
-    .eq("game_code", GAME_CODE)
-    .select()
-    .single();
+  const { data, error } =
+    await db
+      .from("live_games")
+      .update(changes)
+      .eq("game_code", GAME_CODE)
+      .select()
+      .single();
 
   if (error) {
+
     console.error(error);
+
     alert(error.message);
+
     return;
   }
 
   game = data;
+
   render();
 }
 
+
+/* =========================
+   ACTIVE PITCHER
+========================= */
+
 function activePitcherSide() {
-  return game.inning_half === "top" ? "home" : "away";
+
+  return game.inning_half === "top"
+    ? "home"
+    : "away";
 }
+
+
+/* =========================
+   BALL
+========================= */
 
 async function ball() {
 
   if (!game) return;
 
-  const side = activePitcherSide();
-  const pitchField = side + "_pitch_count";
+  const side =
+    activePitcherSide();
+
+  const pitchField =
+    side + "_pitch_count";
 
   const changes = {
-    [pitchField]: Number(game[pitchField] || 0) + 1
+    [pitchField]:
+      Number(
+        game[pitchField] || 0
+      ) + 1
   };
 
   if (game.balls >= 3) {
@@ -591,271 +912,528 @@ async function ball() {
         if (game.runner_third) {
 
           const battingSide =
-            game.inning_half === "top" ? "away" : "home";
+            game.inning_half === "top"
+              ? "away"
+              : "home";
 
-          const scoreField = battingSide + "_score";
+          const scoreField =
+            battingSide + "_score";
 
           changes[scoreField] =
-            Number(game[scoreField] || 0) + 1;
+            Number(
+              game[scoreField] || 0
+            ) + 1;
 
-          changes.runner_third = true;
+          changes.runner_third =
+            true;
 
         } else {
-          changes.runner_third = true;
+
+          changes.runner_third =
+            true;
         }
 
-        changes.runner_second = true;
+        changes.runner_second =
+          true;
 
       } else {
-        changes.runner_second = true;
+
+        changes.runner_second =
+          true;
       }
 
-      changes.runner_first = true;
+      changes.runner_first =
+        true;
 
     } else {
-      changes.runner_first = true;
+
+      changes.runner_first =
+        true;
     }
 
   } else {
-    changes.balls = game.balls + 1;
+
+    changes.balls =
+      game.balls + 1;
   }
 
   await updateGame(changes);
 }
+
+
+/* =========================
+   STRIKE
+========================= */
 
 async function strike() {
 
   if (!game) return;
 
-  const side = activePitcherSide();
-  const pitchField = side + "_pitch_count";
+  const side =
+    activePitcherSide();
+
+  const pitchField =
+    side + "_pitch_count";
 
   const newPitchCount =
-    Number(game[pitchField] || 0) + 1;
+    Number(
+      game[pitchField] || 0
+    ) + 1;
 
   if (game.strikes >= 2) {
 
     await processOut({
-      [pitchField]: newPitchCount
+      [pitchField]:
+        newPitchCount
     });
 
   } else {
 
     await updateGame({
-      strikes: game.strikes + 1,
-      [pitchField]: newPitchCount
+      strikes:
+        game.strikes + 1,
+
+      [pitchField]:
+        newPitchCount
     });
   }
 }
+
+
+/* =========================
+   FOUL
+========================= */
 
 async function foul() {
 
   if (!game) return;
 
-  const side = activePitcherSide();
-  const pitchField = side + "_pitch_count";
+  const side =
+    activePitcherSide();
+
+  const pitchField =
+    side + "_pitch_count";
 
   const changes = {
-    [pitchField]: Number(game[pitchField] || 0) + 1
+    [pitchField]:
+      Number(
+        game[pitchField] || 0
+      ) + 1
   };
 
-  if (game.strikes < 2)
-    changes.strikes = game.strikes + 1;
+  if (game.strikes < 2) {
+
+    changes.strikes =
+      game.strikes + 1;
+  }
 
   await updateGame(changes);
 }
 
-async function processOut(extraChanges = {}) {
 
-  const newOuts = game.outs + 1;
+/* =========================
+   PROCESS OUT
+========================= */
+
+async function processOut(
+  extraChanges = {}
+) {
+
+  const newOuts =
+    game.outs + 1;
 
   if (newOuts >= 3) {
 
     let nextHalf;
-    let nextInning = game.inning;
 
-    if (game.inning_half === "top") {
-      nextHalf = "bottom";
+    let nextInning =
+      game.inning;
+
+    if (
+      game.inning_half === "top"
+    ) {
+
+      nextHalf =
+        "bottom";
+
     } else {
-      nextHalf = "top";
-      nextInning = game.inning + 1;
+
+      nextHalf =
+        "top";
+
+      nextInning =
+        game.inning + 1;
     }
 
     await updateGame({
+
       ...extraChanges,
 
       outs: 0,
+
       balls: 0,
+
       strikes: 0,
 
       runner_first: false,
+
       runner_second: false,
+
       runner_third: false,
 
-      inning_half: nextHalf,
-      inning: nextInning
+      inning_half:
+        nextHalf,
+
+      inning:
+        nextInning
     });
 
   } else {
 
     await updateGame({
+
       ...extraChanges,
 
-      outs: newOuts,
+      outs:
+        newOuts,
+
       balls: 0,
+
       strikes: 0
     });
   }
 }
 
-async function manualOut(amount = 1) {
+
+/* =========================
+   MANUAL OUT
+========================= */
+
+async function manualOut(
+  amount = 1
+) {
 
   if (!game) return;
 
   if (amount > 0) {
+
     await processOut();
+
     return;
   }
 
   await updateGame({
-    outs: Math.max(0, game.outs - 1)
+
+    outs:
+      Math.max(
+        0,
+        game.outs - 1
+      )
   });
 }
+
+
+/* =========================
+   RESET COUNT
+========================= */
 
 async function resetCount() {
 
   await updateGame({
+
     balls: 0,
+
     strikes: 0
   });
 }
 
-async function manualCount(field, amount) {
 
-  let max = field === "balls" ? 3 : 2;
+/* =========================
+   MANUAL COUNT
+========================= */
 
-  let value = Number(game[field]) + amount;
+async function manualCount(
+  field,
+  amount
+) {
 
-  value = Math.max(0, Math.min(max, value));
+  let max =
+    field === "balls"
+      ? 3
+      : 2;
 
-  await updateGame({
-    [field]: value
-  });
-}
+  let value =
+    Number(game[field])
+    + amount;
 
-async function changeScore(side, amount) {
-
-  const field = side + "_score";
-
-  await updateGame({
-    [field]: Math.max(
+  value =
+    Math.max(
       0,
-      Number(game[field]) + amount
-    )
+      Math.min(
+        max,
+        value
+      )
+    );
+
+  await updateGame({
+
+    [field]:
+      value
   });
 }
+
+
+/* =========================
+   SCORE
+========================= */
+
+async function changeScore(
+  side,
+  amount
+) {
+
+  const field =
+    side + "_score";
+
+  await updateGame({
+
+    [field]:
+
+      Math.max(
+
+        0,
+
+        Number(
+          game[field]
+        ) + amount
+
+      )
+  });
+}
+
+
+/* =========================
+   HALF
+========================= */
 
 async function toggleHalf() {
 
   await updateGame({
+
     inning_half:
+
       game.inning_half === "top"
         ? "bottom"
         : "top",
 
     balls: 0,
+
     strikes: 0,
+
     outs: 0,
 
     runner_first: false,
+
     runner_second: false,
+
     runner_third: false
   });
 }
 
-async function changeInning(amount) {
+
+/* =========================
+   INNING
+========================= */
+
+async function changeInning(
+  amount
+) {
 
   await updateGame({
-    inning: Math.max(
-      1,
-      Number(game.inning) + amount
-    )
+
+    inning:
+
+      Math.max(
+
+        1,
+
+        Number(
+          game.inning
+        ) + amount
+
+      )
   });
 }
 
-async function toggleBase(field) {
+
+/* =========================
+   BASES
+========================= */
+
+async function toggleBase(
+  field
+) {
 
   await updateGame({
-    [field]: !game[field]
+
+    [field]:
+      !game[field]
   });
 }
 
-async function savePitcher(side) {
+
+/* =========================
+   SAVE PITCHER
+========================= */
+
+async function savePitcher(
+  side
+) {
 
   const number =
-    document.getElementById(
-      side + "PitcherNumber"
-    ).value.trim();
+    document
+      .getElementById(
+        side + "PitcherNumber"
+      )
+      .value
+      .trim();
 
   const name =
-    document.getElementById(
-      side + "PitcherName"
-    ).value.trim();
+    document
+      .getElementById(
+        side + "PitcherName"
+      )
+      .value
+      .trim();
 
   await updateGame({
-    [side + "_pitcher_number"]: number,
-    [side + "_pitcher_name"]: name
+
+    [side + "_pitcher_number"]:
+      number,
+
+    [side + "_pitcher_name"]:
+      name
   });
 }
 
-async function adjustPitchCount(side, amount) {
 
-  const field = side + "_pitch_count";
+/* =========================
+   ADJUST PITCH COUNT
+========================= */
+
+async function adjustPitchCount(
+  side,
+  amount
+) {
+
+  const field =
+    side + "_pitch_count";
 
   await updateGame({
-    [field]: Math.max(
-      0,
-      Number(game[field] || 0) + amount
-    )
+
+    [field]:
+
+      Math.max(
+
+        0,
+
+        Number(
+          game[field] || 0
+        ) + amount
+
+      )
   });
 }
 
-async function newPitcher(side) {
 
-  const number = prompt(
-    "New pitcher jersey number:"
-  );
+/* =========================
+   PITCHING CHANGE
+========================= */
 
-  if (number === null) return;
+async function newPitcher(
+  side
+) {
 
-  const name = prompt(
-    "New pitcher name (optional):"
-  );
+  const number =
+    prompt(
+      "New pitcher jersey number:"
+    );
 
-  if (name === null) return;
+  if (
+    number === null
+  ) return;
+
+  const name =
+    prompt(
+      "New pitcher name (optional):"
+    );
+
+  if (
+    name === null
+  ) return;
 
   await updateGame({
-    [side + "_pitcher_number"]: number.trim(),
-    [side + "_pitcher_name"]: name.trim(),
-    [side + "_pitch_count"]: 0
+
+    [side + "_pitcher_number"]:
+      number.trim(),
+
+    [side + "_pitcher_name"]:
+      name.trim(),
+
+    [side + "_pitch_count"]:
+      0
   });
 }
 
-db.channel("calzadilla-live-" + GAME_CODE)
-  .on(
-    "postgres_changes",
-    {
-      event: "UPDATE",
-      schema: "public",
-      table: "live_games",
-      filter: "game_code=eq." + GAME_CODE
-    },
-    payload => {
-      game = payload.new;
-      render();
-    }
+
+/* =========================
+   REALTIME
+========================= */
+
+db
+  .channel(
+    "calzadilla-live-"
+    + GAME_CODE
   )
+
+  .on(
+
+    "postgres_changes",
+
+    {
+
+      event:
+        "UPDATE",
+
+      schema:
+        "public",
+
+      table:
+        "live_games",
+
+      filter:
+        "game_code=eq."
+        + GAME_CODE
+
+    },
+
+    payload => {
+
+      game =
+        payload.new;
+
+      render();
+
+    }
+
+  )
+
   .subscribe();
+
+
+/* =========================
+   START
+========================= */
 
 loadGame();
 
