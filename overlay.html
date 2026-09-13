@@ -1,279 +1,383 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Calzadilla Live Overlay</title>
+<title>Calzadilla Live Overlay</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
 
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: transparent !important;
-      font-family: Arial, Helvetica, sans-serif;
-    }
+* {
+  box-sizing: border-box;
+}
 
-    #overlay {
-      position: absolute;
-      left: 20px;
-      top: 20px;
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent !important;
+  font-family: Arial, Helvetica, sans-serif;
+}
 
-      width: 746px;
-      height: 283px;
+#overlay {
+  position: absolute;
+  left: 20px;
+  top: 20px;
 
-      background: transparent;
-    }
+  width: 746px;
+  height: 283px;
 
-    #scoreboardArt {
-      position: absolute;
-      inset: 0;
+  background: transparent;
+}
 
-      width: 746px;
-      height: 283px;
 
-      object-fit: contain;
-      pointer-events: none;
-    }
+/* ========================================
+   MAIN ART
+======================================== */
 
-    /* =========================
-       TEAM NAMES
-    ========================= */
+#scoreboardArt {
+  position: absolute;
+  inset: 0;
 
-    .team-name {
-      position: absolute;
+  width: 746px;
+  height: 283px;
 
-      width: 125px;
+  pointer-events: none;
+}
 
-      color: #10266f;
 
-      font-size: 13px;
-      font-weight: 900;
+/* ========================================
+   TOP / BOTTOM
+======================================== */
 
-      text-transform: uppercase;
+#half {
+  position: absolute;
 
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+  left: 322px;
+  top: 76px;
 
-      line-height: 28px;
-    }
+  width: 58px;
+  height: 25px;
 
-    #awayName {
-      left: 218px;
-      top: 86px;
-    }
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    #homeName {
-      left: 218px;
-      top: 135px;
-    }
+  color: #10266f;
 
-    /* =========================
-       SCORE
-    ========================= */
+  font-size: 17px;
+  font-weight: 900;
+}
 
-    .score {
-      position: absolute;
 
-      width: 33px;
-      height: 31px;
+/* ========================================
+   COUNT — 2-1
+======================================== */
 
-      display: flex;
-      align-items: center;
-      justify-content: center;
+#count {
+  position: absolute;
 
-      color: #10266f;
+  left: 378px;
+  top: 76px;
 
-      font-size: 22px;
-      font-weight: 900;
-    }
+  width: 48px;
+  height: 25px;
 
-    #awayScore {
-      left: 437px;
-      top: 87px;
-    }
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    #homeScore {
-      left: 437px;
-      top: 136px;
-    }
+  color: #10266f;
 
-    /* =========================
-       INNING
-    ========================= */
+  font-size: 17px;
+  font-weight: 900;
+}
 
-    #inning {
-      position: absolute;
 
-      left: 425px;
-      top: 52px;
+/* ========================================
+   INNING
+   BLUE BOX
+======================================== */
 
-      width: 65px;
-      height: 34px;
+#inning {
+  position: absolute;
 
-      display: flex;
-      align-items: center;
-      justify-content: center;
+  left: 433px;
+  top: 69px;
 
-      color: #10266f;
+  width: 53px;
+  height: 38px;
 
-      font-size: 21px;
-      font-weight: 900;
-    }
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    /* =========================
-       BALLS / STRIKES
-    ========================= */
+  color: white;
 
-    .count-value {
-      position: absolute;
+  font-size: 23px;
+  font-weight: 900;
+}
 
-      width: 35px;
-      height: 28px;
 
-      display: flex;
-      align-items: center;
-      justify-content: center;
+/* ========================================
+   TEAM NAMES
+======================================== */
 
-      color: #10266f;
+.team-name {
+  position: absolute;
 
-      font-size: 19px;
-      font-weight: 900;
-    }
+  width: 112px;
+  height: 30px;
 
-    #balls {
-      left: 438px;
-      top: 106px;
-    }
+  display: flex;
+  align-items: center;
 
-    #strikes {
-      left: 438px;
-      top: 155px;
-    }
+  color: white;
 
-    /* =========================
-       OUTS
-    ========================= */
+  font-size: 13px;
+  font-weight: 900;
 
-    .out-dot {
-      position: absolute;
+  padding-left: 9px;
 
-      width: 14px;
-      height: 14px;
+  text-transform: uppercase;
 
-      border-radius: 50%;
-      background: #ffe100;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-      display: none;
-    }
 
-    #out1 {
-      left: 510px;
-      top: 177px;
-    }
+/* AWAY — TOP BLUE BAR */
 
-    #out2 {
-      left: 529px;
-      top: 177px;
-    }
+#awayName {
+  left: 311px;
+  top: 136px;
+}
 
-    /* =========================
-       BASE RUNNERS
-    ========================= */
 
-    .runner-base {
-      position: absolute;
+/* HOME — BOTTOM BLUE BAR */
 
-      width: 17px;
-      height: 17px;
+#homeName {
+  left: 311px;
+  top: 178px;
+}
 
-      background: #ffe100;
 
-      transform: rotate(45deg);
+/* ========================================
+   SCORES
+======================================== */
 
-      display: none;
+.score {
+  position: absolute;
 
-      box-shadow: 0 1px 3px rgba(0,0,0,.35);
-    }
+  width: 32px;
+  height: 30px;
 
-    /* 1B */
-    #runnerFirst {
-      left: 691px;
-      top: 130px;
-    }
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    /* 2B */
-    #runnerSecond {
-      left: 610px;
-      top: 49px;
-    }
+  color: white;
 
-    /* 3B */
-    #runnerThird {
-      left: 529px;
-      top: 130px;
-    }
-  </style>
+  font-size: 21px;
+  font-weight: 900;
+}
+
+
+/* AWAY SCORE */
+
+#awayScore {
+  left: 432px;
+  top: 136px;
+}
+
+
+/* HOME SCORE */
+
+#homeScore {
+  left: 432px;
+  top: 178px;
+}
+
+
+/* ========================================
+   OUTS
+======================================== */
+
+.out-indicator {
+  position: absolute;
+
+  width: 17px;
+  height: 17px;
+
+  display: none;
+}
+
+
+/* first circle */
+
+#out1 {
+  left: 508px;
+  top: 176px;
+}
+
+
+/* second circle */
+
+#out2 {
+  left: 527px;
+  top: 176px;
+}
+
+
+/* ========================================
+   BASE RUNNERS
+======================================== */
+
+.runner {
+  position: absolute;
+
+  width: 25px;
+  height: 25px;
+
+  display: none;
+}
+
+
+/* SECOND BASE */
+
+#runnerSecond {
+  left: 605px;
+  top: 50px;
+}
+
+
+/* THIRD BASE */
+
+#runnerThird {
+  left: 527px;
+  top: 128px;
+}
+
+
+/* FIRST BASE */
+
+#runnerFirst {
+  left: 685px;
+  top: 128px;
+}
+
+</style>
 </head>
+
 
 <body>
 
 <div id="overlay">
+
+  <!-- MAIN SCOREBOARD -->
 
   <img
     id="scoreboardArt"
     src="BOX SCORE 2026.png"
     alt="">
 
-  <div id="awayName" class="team-name">
+
+  <!-- TOP / BOTTOM -->
+
+  <div id="half">
+    TOP
+  </div>
+
+
+  <!-- COUNT -->
+
+  <div id="count">
+    0-0
+  </div>
+
+
+  <!-- INNING -->
+
+  <div id="inning">
+    1
+  </div>
+
+
+  <!-- AWAY -->
+
+  <div
+    id="awayName"
+    class="team-name">
     AWAY
   </div>
 
-  <div id="awayScore" class="score">
+  <div
+    id="awayScore"
+    class="score">
     0
   </div>
 
-  <div id="homeName" class="team-name">
+
+  <!-- HOME -->
+
+  <div
+    id="homeName"
+    class="team-name">
     HOME
   </div>
 
-  <div id="homeScore" class="score">
+  <div
+    id="homeScore"
+    class="score">
     0
   </div>
 
-  <div id="inning">
-    ▲1
-  </div>
 
-  <div id="balls" class="count-value">
-    0
-  </div>
+  <!-- OUTS -->
 
-  <div id="strikes" class="count-value">
-    0
-  </div>
+  <img
+    id="out1"
+    class="out-indicator"
+    src="BOX OUT.png">
 
-  <div id="out1" class="out-dot"></div>
-  <div id="out2" class="out-dot"></div>
+  <img
+    id="out2"
+    class="out-indicator"
+    src="BOX OUT.png">
 
-  <div id="runnerFirst" class="runner-base"></div>
-  <div id="runnerSecond" class="runner-base"></div>
-  <div id="runnerThird" class="runner-base"></div>
+
+  <!-- RUNNERS -->
+
+  <img
+    id="runnerFirst"
+    class="runner"
+    src="BOX BASES.png">
+
+  <img
+    id="runnerSecond"
+    class="runner"
+    src="BOX BASES.png">
+
+  <img
+    id="runnerThird"
+    class="runner"
+    src="BOX BASES.png">
 
 </div>
 
+
 <script>
+
+/* ========================================
+   SUPABASE
+======================================== */
 
 const SUPABASE_URL =
   "https://smaqspbeeouzgbwskbnx.supabase.co";
@@ -284,14 +388,20 @@ const SUPABASE_KEY =
 const GAME_CODE =
   "TEST001";
 
+
 const db =
   window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
   );
 
+
 let game = null;
 
+
+/* ========================================
+   LOAD
+======================================== */
 
 async function loadGame() {
 
@@ -299,13 +409,20 @@ async function loadGame() {
     await db
       .from("live_games")
       .select("*")
-      .eq("game_code", GAME_CODE)
+      .eq(
+        "game_code",
+        GAME_CODE
+      )
       .single();
 
+
   if (error) {
+
     console.error(error);
+
     return;
   }
+
 
   game = data;
 
@@ -313,116 +430,145 @@ async function loadGame() {
 }
 
 
+/* ========================================
+   RENDER
+======================================== */
+
 function render() {
 
   if (!game) return;
 
 
-  document.getElementById(
-    "awayName"
-  ).textContent =
-    game.away_team;
+  /* TEAMS */
+
+  document
+    .getElementById("awayName")
+    .textContent =
+      game.away_team;
 
 
-  document.getElementById(
-    "homeName"
-  ).textContent =
-    game.home_team;
+  document
+    .getElementById("homeName")
+    .textContent =
+      game.home_team;
 
 
-  document.getElementById(
-    "awayScore"
-  ).textContent =
-    game.away_score;
+  /* SCORES */
+
+  document
+    .getElementById("awayScore")
+    .textContent =
+      game.away_score;
 
 
-  document.getElementById(
-    "homeScore"
-  ).textContent =
-    game.home_score;
+  document
+    .getElementById("homeScore")
+    .textContent =
+      game.home_score;
 
 
-  const arrow =
-    game.inning_half === "top"
-      ? "▲"
-      : "▼";
+  /* TOP / BOTTOM */
+
+  document
+    .getElementById("half")
+    .textContent =
+      game.inning_half === "top"
+        ? "TOP"
+        : "BOT";
 
 
-  document.getElementById(
-    "inning"
-  ).textContent =
-    arrow + game.inning;
+  /* INNING */
+
+  document
+    .getElementById("inning")
+    .textContent =
+      game.inning;
 
 
-  document.getElementById(
-    "balls"
-  ).textContent =
-    game.balls;
+  /* COUNT */
+
+  document
+    .getElementById("count")
+    .textContent =
+      game.balls
+      + "-"
+      + game.strikes;
 
 
-  document.getElementById(
-    "strikes"
-  ).textContent =
-    game.strikes;
+  /* OUTS */
+
+  document
+    .getElementById("out1")
+    .style.display =
+      game.outs >= 1
+        ? "block"
+        : "none";
 
 
-  document.getElementById(
-    "out1"
-  ).style.display =
-    game.outs >= 1
-      ? "block"
-      : "none";
+  document
+    .getElementById("out2")
+    .style.display =
+      game.outs >= 2
+        ? "block"
+        : "none";
 
 
-  document.getElementById(
-    "out2"
-  ).style.display =
-    game.outs >= 2
-      ? "block"
-      : "none";
+  /* FIRST */
+
+  document
+    .getElementById("runnerFirst")
+    .style.display =
+      game.runner_first
+        ? "block"
+        : "none";
 
 
-  document.getElementById(
-    "runnerFirst"
-  ).style.display =
-    game.runner_first
-      ? "block"
-      : "none";
+  /* SECOND */
+
+  document
+    .getElementById("runnerSecond")
+    .style.display =
+      game.runner_second
+        ? "block"
+        : "none";
 
 
-  document.getElementById(
-    "runnerSecond"
-  ).style.display =
-    game.runner_second
-      ? "block"
-      : "none";
+  /* THIRD */
 
+  document
+    .getElementById("runnerThird")
+    .style.display =
+      game.runner_third
+        ? "block"
+        : "none";
 
-  document.getElementById(
-    "runnerThird"
-  ).style.display =
-    game.runner_third
-      ? "block"
-      : "none";
 }
 
 
+/* ========================================
+   REALTIME
+======================================== */
+
 db
   .channel(
-    "calzadilla-overlay-" +
-    GAME_CODE
+    "calzadilla-overlay-"
+    + GAME_CODE
   )
 
   .on(
+
     "postgres_changes",
 
     {
       event: "UPDATE",
+
       schema: "public",
+
       table: "live_games",
+
       filter:
-        "game_code=eq." +
-        GAME_CODE
+        "game_code=eq."
+        + GAME_CODE
     },
 
     payload => {
@@ -431,11 +577,17 @@ db
         payload.new;
 
       render();
+
     }
+
   )
 
   .subscribe();
 
+
+/* ========================================
+   START
+======================================== */
 
 loadGame();
 
