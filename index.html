@@ -235,6 +235,11 @@
       outline: 2px solid #168b58;
     }
 
+
+    /* =========================
+       DIAMOND
+    ========================== */
+
     .field-wrap {
       display: flex;
       justify-content: center;
@@ -309,6 +314,7 @@
       width: 38px;
       height: 30px;
       background: #e5e5e5;
+
       clip-path: polygon(
         0 0,
         100% 0,
@@ -316,6 +322,7 @@
         50% 100%,
         16% 65%
       );
+
       opacity: .78;
     }
 
@@ -329,13 +336,16 @@
     }
 
 
-    /* MODAL */
+    /* =========================
+       YES / NO MODAL
+    ========================== */
 
-    #decisionModal {
+    #decisionModal,
+    #choiceModal {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.78);
+      background: rgba(0,0,0,.82);
       z-index: 9999;
       align-items: center;
       justify-content: center;
@@ -344,7 +354,7 @@
 
     .modal-box {
       width: 100%;
-      max-width: 420px;
+      max-width: 460px;
       background: #171a20;
       border: 1px solid #353b45;
       border-radius: 16px;
@@ -361,8 +371,9 @@
       margin-bottom: 12px;
     }
 
-    #decisionQuestion {
-      font-size: 24px;
+    #decisionQuestion,
+    #choiceQuestion {
+      font-size: 23px;
       font-weight: 800;
       line-height: 1.25;
       margin-bottom: 22px;
@@ -375,10 +386,23 @@
     }
 
     .modal-buttons button {
-      height: 60px;
-      font-size: 18px;
+      min-height: 60px;
+      font-size: 17px;
       margin: 0;
     }
+
+    #choiceButtons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    #choiceButtons button {
+      min-height: 60px;
+      margin: 0;
+      font-size: 16px;
+    }
+
 
     @media(max-width: 650px) {
 
@@ -403,6 +427,10 @@
         grid-template-columns: repeat(2, 1fr);
       }
 
+      #choiceButtons {
+        grid-template-columns: 1fr;
+      }
+
       .score {
         font-size: 42px;
       }
@@ -416,7 +444,9 @@
 
 <div class="container">
 
-  <h1>Calzadilla Live</h1>
+  <h1>
+    Calzadilla Live
+  </h1>
 
   <div class="subtitle">
     Baseball Control Center
@@ -561,7 +591,9 @@
 
   <div class="card center">
 
-    <strong>Inning</strong>
+    <strong>
+      Inning
+    </strong>
 
     <div
       id="inningDisplay"
@@ -584,11 +616,13 @@
   </div>
 
 
-  <!-- PITCH -->
+  <!-- PITCH CONTROLS -->
 
   <div class="card">
 
-    <strong>Pitch Controls</strong>
+    <strong>
+      Pitch Controls
+    </strong>
 
     <div
       class="pitch-actions"
@@ -633,7 +667,7 @@
   </div>
 
 
-  <!-- OFFENSIVE EVENTS -->
+  <!-- EVENTS -->
 
   <div class="card">
 
@@ -712,7 +746,9 @@
 
   <div class="card">
 
-    <strong>Count</strong>
+    <strong>
+      Count
+    </strong>
 
     <div
       class="count-grid"
@@ -795,7 +831,9 @@
 
   <div class="card">
 
-    <strong>Runners</strong>
+    <strong>
+      Runners
+    </strong>
 
     <div class="field-wrap">
 
@@ -807,22 +845,37 @@
           id="baseSecond"
           class="base-node"
           onclick="toggleBase('runner_second')">
-          <span>2B</span>
+
+          <span>
+            2B
+          </span>
+
         </div>
+
 
         <div
           id="baseThird"
           class="base-node"
           onclick="toggleBase('runner_third')">
-          <span>3B</span>
+
+          <span>
+            3B
+          </span>
+
         </div>
+
 
         <div
           id="baseFirst"
           class="base-node"
           onclick="toggleBase('runner_first')">
-          <span>1B</span>
+
+          <span>
+            1B
+          </span>
+
         </div>
+
 
         <div class="home-plate"></div>
 
@@ -837,7 +890,9 @@
 
   <div class="card">
 
-    <strong>Pitchers</strong>
+    <strong>
+      Pitchers
+    </strong>
 
     <div class="notice">
       TOP = Home pitcher is active.
@@ -961,7 +1016,7 @@
 </div>
 
 
-<!-- MODAL -->
+<!-- YES / NO -->
 
 <div id="decisionModal">
 
@@ -996,6 +1051,27 @@
 </div>
 
 
+<!-- MULTIPLE CHOICE -->
+
+<div id="choiceModal">
+
+  <div class="modal-box">
+
+    <div class="modal-title">
+      Fielder's Choice
+    </div>
+
+    <div id="choiceQuestion">
+      Where was the out?
+    </div>
+
+    <div id="choiceButtons"></div>
+
+  </div>
+
+</div>
+
+
 <script>
 
 const SUPABASE_URL =
@@ -1014,13 +1090,18 @@ const db =
   );
 
 
-let game = null;
+let game =
+  null;
 
-let decisionResolver = null;
+let decisionResolver =
+  null;
+
+let choiceResolver =
+  null;
 
 
 /* =========================
-   MODAL
+   YES / NO
 ========================= */
 
 function askYesNo(question) {
@@ -1068,6 +1149,98 @@ function resolveDecision(value) {
 
     resolver(value);
   }
+}
+
+
+/* =========================
+   CHOICE MODAL
+========================= */
+
+function askChoice(
+  question,
+  options
+) {
+
+  return new Promise(resolve => {
+
+    choiceResolver =
+      resolve;
+
+    document
+      .getElementById(
+        "choiceQuestion"
+      )
+      .textContent =
+        question;
+
+
+    const container =
+      document.getElementById(
+        "choiceButtons"
+      );
+
+
+    container.innerHTML =
+      "";
+
+
+    options.forEach(
+      option => {
+
+        const button =
+          document.createElement(
+            "button"
+          );
+
+
+        button.textContent =
+          option.label;
+
+
+        button.className =
+          option.className ||
+          "blue";
+
+
+        button.onclick =
+          () => {
+
+            document
+              .getElementById(
+                "choiceModal"
+              )
+              .style.display =
+                "none";
+
+
+            const resolver =
+              choiceResolver;
+
+
+            choiceResolver =
+              null;
+
+
+            resolver(
+              option.value
+            );
+          };
+
+
+        container.appendChild(
+          button
+        );
+      }
+    );
+
+
+    document
+      .getElementById(
+        "choiceModal"
+      )
+      .style.display =
+        "flex";
+  });
 }
 
 
@@ -1121,6 +1294,7 @@ async function loadGame() {
       )
       .single();
 
+
   if (error) {
 
     console.error(error);
@@ -1162,54 +1336,31 @@ function render() {
   if (!game) return;
 
 
-  document
-    .getElementById("homeName")
-    .innerText =
-      game.home_team;
+  homeName.innerText =
+    game.home_team;
 
+  awayName.innerText =
+    game.away_team;
 
-  document
-    .getElementById("awayName")
-    .innerText =
-      game.away_team;
+  homeScore.innerText =
+    game.home_score;
 
+  awayScore.innerText =
+    game.away_score;
 
-  document
-    .getElementById("homeScore")
-    .innerText =
-      game.home_score;
+  balls.innerText =
+    game.balls;
 
+  strikes.innerText =
+    game.strikes;
 
-  document
-    .getElementById("awayScore")
-    .innerText =
-      game.away_score;
+  outs.innerText =
+    game.outs;
 
-
-  document
-    .getElementById("balls")
-    .innerText =
-      game.balls;
-
-
-  document
-    .getElementById("strikes")
-    .innerText =
-      game.strikes;
-
-
-  document
-    .getElementById("outs")
-    .innerText =
-      game.outs;
-
-
-  document
-    .getElementById("inningDisplay")
-    .innerText =
-      game.inning_half.toUpperCase()
-      + " "
-      + game.inning;
+  inningDisplay.innerText =
+    game.inning_half.toUpperCase()
+    + " "
+    + game.inning;
 
 
   const setupAway =
@@ -1243,139 +1394,92 @@ function render() {
   }
 
 
-  document
-    .getElementById("baseFirst")
-    .classList.toggle(
-      "active",
-      game.runner_first
-    );
+  baseFirst.classList.toggle(
+    "active",
+    game.runner_first
+  );
+
+  baseSecond.classList.toggle(
+    "active",
+    game.runner_second
+  );
+
+  baseThird.classList.toggle(
+    "active",
+    game.runner_third
+  );
 
 
-  document
-    .getElementById("baseSecond")
-    .classList.toggle(
-      "active",
-      game.runner_second
-    );
+  homePitchCount.innerText =
+    game.home_pitch_count || 0;
+
+  awayPitchCount.innerText =
+    game.away_pitch_count || 0;
 
 
-  document
-    .getElementById("baseThird")
-    .classList.toggle(
-      "active",
-      game.runner_third
-    );
+  homePitcherTeam.innerText =
+    game.home_team +
+    " Pitcher";
 
-
-  document
-    .getElementById("homePitchCount")
-    .innerText =
-      game.home_pitch_count || 0;
-
-
-  document
-    .getElementById("awayPitchCount")
-    .innerText =
-      game.away_pitch_count || 0;
-
-
-  document
-    .getElementById("homePitcherTeam")
-    .innerText =
-      game.home_team +
-      " Pitcher";
-
-
-  document
-    .getElementById("awayPitcherTeam")
-    .innerText =
-      game.away_team +
-      " Pitcher";
-
-
-  const hn =
-    document.getElementById(
-      "homePitcherNumber"
-    );
-
-  const hname =
-    document.getElementById(
-      "homePitcherName"
-    );
-
-  const an =
-    document.getElementById(
-      "awayPitcherNumber"
-    );
-
-  const aname =
-    document.getElementById(
-      "awayPitcherName"
-    );
+  awayPitcherTeam.innerText =
+    game.away_team +
+    " Pitcher";
 
 
   if (
     document.activeElement !==
-    hn
+    homePitcherNumber
   ) {
 
-    hn.value =
-      game.home_pitcher_number
-      || "";
+    homePitcherNumber.value =
+      game.home_pitcher_number ||
+      "";
   }
 
 
   if (
     document.activeElement !==
-    hname
+    homePitcherName
   ) {
 
-    hname.value =
-      game.home_pitcher_name
-      || "";
+    homePitcherName.value =
+      game.home_pitcher_name ||
+      "";
   }
 
 
   if (
     document.activeElement !==
-    an
+    awayPitcherNumber
   ) {
 
-    an.value =
-      game.away_pitcher_number
-      || "";
+    awayPitcherNumber.value =
+      game.away_pitcher_number ||
+      "";
   }
 
 
   if (
     document.activeElement !==
-    aname
+    awayPitcherName
   ) {
 
-    aname.value =
-      game.away_pitcher_name
-      || "";
+    awayPitcherName.value =
+      game.away_pitcher_name ||
+      "";
   }
 
 
-  document
-    .getElementById(
-      "homePitcherBox"
-    )
-    .classList.toggle(
-      "active-pitcher",
-      game.inning_half === "top"
-    );
+  homePitcherBox.classList.toggle(
+    "active-pitcher",
+    game.inning_half === "top"
+  );
 
 
-  document
-    .getElementById(
-      "awayPitcherBox"
-    )
-    .classList.toggle(
-      "active-pitcher",
-      game.inning_half === "bottom"
-    );
+  awayPitcherBox.classList.toggle(
+    "active-pitcher",
+    game.inning_half === "bottom"
+  );
 }
 
 
@@ -1383,7 +1487,9 @@ function render() {
    UPDATE
 ========================= */
 
-async function updateGame(changes) {
+async function updateGame(
+  changes
+) {
 
   const { data, error } =
     await db
@@ -1431,19 +1537,12 @@ async function updateGame(changes) {
 async function updateTeams() {
 
   const away =
-    document
-      .getElementById(
-        "setupAwayTeam"
-      )
+    setupAwayTeam
       .value
       .trim();
 
-
   const home =
-    document
-      .getElementById(
-        "setupHomeTeam"
-      )
+    setupHomeTeam
       .value
       .trim();
 
@@ -1475,19 +1574,12 @@ async function updateTeams() {
 async function startNewGame() {
 
   const away =
-    document
-      .getElementById(
-        "setupAwayTeam"
-      )
+    setupAwayTeam
       .value
       .trim();
 
-
   const home =
-    document
-      .getElementById(
-        "setupHomeTeam"
-      )
+    setupHomeTeam
       .value
       .trim();
 
@@ -1553,58 +1645,7 @@ async function startNewGame() {
 
 
 /* =========================
-   BALL / WALK
-========================= */
-
-async function ball() {
-
-  if (!game) return;
-
-
-  const pitchField =
-    activePitchField();
-
-
-  const changes = {
-
-    [pitchField]:
-      Number(
-        game[pitchField]
-        || 0
-      ) + 1
-  };
-
-
-  if (
-    game.balls >= 3
-  ) {
-
-    changes.balls =
-      0;
-
-    changes.strikes =
-      0;
-
-
-    forceBatterToFirst(
-      changes
-    );
-
-  } else {
-
-    changes.balls =
-      game.balls + 1;
-  }
-
-
-  await updateGame(
-    changes
-  );
-}
-
-
-/* =========================
-   FORCE BATTER TO FIRST
+   FORCE TO FIRST
 ========================= */
 
 function forceBatterToFirst(
@@ -1663,6 +1704,57 @@ function forceBatterToFirst(
       }
     }
   }
+}
+
+
+/* =========================
+   BALL
+========================= */
+
+async function ball() {
+
+  if (!game) return;
+
+
+  const pitchField =
+    activePitchField();
+
+
+  const changes = {
+
+    [pitchField]:
+      Number(
+        game[pitchField]
+        || 0
+      ) + 1
+  };
+
+
+  if (
+    game.balls >= 3
+  ) {
+
+    changes.balls =
+      0;
+
+    changes.strikes =
+      0;
+
+
+    forceBatterToFirst(
+      changes
+    );
+
+  } else {
+
+    changes.balls =
+      game.balls + 1;
+  }
+
+
+  await updateGame(
+    changes
+  );
 }
 
 
@@ -1824,7 +1916,6 @@ async function singleHit() {
   let runs =
     0;
 
-
   let nextFirst =
     true;
 
@@ -1969,7 +2060,6 @@ async function doubleHit() {
 
   let runs =
     0;
-
 
   let nextThird =
     false;
@@ -2192,22 +2282,6 @@ async function errorPlay() {
   if (!game) return;
 
 
-  const hadFirst =
-    Boolean(
-      game.runner_first
-    );
-
-  const hadSecond =
-    Boolean(
-      game.runner_second
-    );
-
-  const hadThird =
-    Boolean(
-      game.runner_third
-    );
-
-
   const pitchField =
     activePitchField();
 
@@ -2230,7 +2304,7 @@ async function errorPlay() {
 
 
   if (
-    hadThird
+    game.runner_third
   ) {
 
     const scored =
@@ -2254,7 +2328,7 @@ async function errorPlay() {
 
 
   if (
-    hadSecond
+    game.runner_second
   ) {
 
     const scored =
@@ -2278,22 +2352,31 @@ async function errorPlay() {
 
 
   if (
-    hadFirst
+    game.runner_first
   ) {
 
-    const third =
-      await askYesNo(
-        "Did the runner from 1B reach 3B on the error?"
-      );
-
-
     if (
-      third &&
       !nextThird
     ) {
 
-      nextThird =
-        true;
+      const third =
+        await askYesNo(
+          "Did the runner from 1B reach 3B on the error?"
+        );
+
+
+      if (
+        third
+      ) {
+
+        nextThird =
+          true;
+
+      } else {
+
+        nextSecond =
+          true;
+      }
 
     } else {
 
@@ -2344,48 +2427,364 @@ async function fieldersChoice() {
   if (!game) return;
 
 
-  const pitchField =
-    activePitchField();
-
-
-  const oldFirst =
+  const hadFirst =
     Boolean(
       game.runner_first
     );
 
-  const oldSecond =
+  const hadSecond =
     Boolean(
       game.runner_second
     );
 
-  const oldThird =
+  const hadThird =
     Boolean(
       game.runner_third
     );
 
 
-  let first =
-    true;
+  const options =
+    [];
 
-  let second =
-    oldSecond;
-
-  let third =
-    oldThird;
-
-
-  /*
-    Common case:
-    runner on first is retired,
-    batter reaches first.
-  */
 
   if (
-    oldFirst
+    hadFirst
   ) {
 
-    second =
-      false;
+    options.push({
+
+      label:
+        "OUT AT 2B",
+
+      value:
+        "second",
+
+      className:
+        "blue"
+    });
+  }
+
+
+  if (
+    hadSecond
+  ) {
+
+    options.push({
+
+      label:
+        "OUT AT 3B",
+
+      value:
+        "third",
+
+      className:
+        "purple"
+    });
+  }
+
+
+  if (
+    hadThird
+  ) {
+
+    options.push({
+
+      label:
+        "OUT AT HOME",
+
+      value:
+        "home",
+
+      className:
+        "orange"
+    });
+  }
+
+
+  options.push({
+
+    label:
+      "BATTER OUT",
+
+    value:
+      "batter",
+
+    className:
+      "red"
+  });
+
+
+  const result =
+    await askChoice(
+      "Where was the out?",
+      options
+    );
+
+
+  const pitchField =
+    activePitchField();
+
+
+  const scoreField =
+    battingScoreField();
+
+
+  let runs =
+    0;
+
+  let nextFirst =
+    false;
+
+  let nextSecond =
+    false;
+
+  let nextThird =
+    false;
+
+
+  /* =========================
+     OUT AT 2B
+  ========================= */
+
+  if (
+    result === "second"
+  ) {
+
+    /*
+      Runner from first is out.
+      Batter reaches first.
+    */
+
+    nextFirst =
+      true;
+
+
+    if (
+      hadSecond
+    ) {
+
+      const toThird =
+        await askYesNo(
+          "Did the runner from 2B advance to 3B?"
+        );
+
+
+      if (
+        toThird
+      ) {
+
+        nextThird =
+          true;
+
+      } else {
+
+        nextSecond =
+          true;
+      }
+    }
+
+
+    if (
+      hadThird
+    ) {
+
+      const scored =
+        await askYesNo(
+          "Did the runner from 3B score?"
+        );
+
+
+      if (
+        scored
+      ) {
+
+        runs++;
+
+      } else {
+
+        nextThird =
+          true;
+      }
+    }
+  }
+
+
+  /* =========================
+     OUT AT 3B
+  ========================= */
+
+  if (
+    result === "third"
+  ) {
+
+    /*
+      Runner from second is out.
+      Batter reaches first.
+
+      Runner from first advances
+      to second on the force.
+    */
+
+    nextFirst =
+      true;
+
+
+    if (
+      hadFirst
+    ) {
+
+      nextSecond =
+        true;
+    }
+
+
+    if (
+      hadThird
+    ) {
+
+      const scored =
+        await askYesNo(
+          "Did the runner from 3B score?"
+        );
+
+
+      if (
+        scored
+      ) {
+
+        runs++;
+
+      } else {
+
+        nextThird =
+          true;
+      }
+    }
+  }
+
+
+  /* =========================
+     OUT AT HOME
+  ========================= */
+
+  if (
+    result === "home"
+  ) {
+
+    /*
+      Runner from third out at home.
+      Batter reaches first.
+    */
+
+    nextFirst =
+      true;
+
+
+    if (
+      hadFirst
+    ) {
+
+      nextSecond =
+        true;
+    }
+
+
+    if (
+      hadSecond
+    ) {
+
+      nextThird =
+        true;
+    }
+  }
+
+
+  /* =========================
+     BATTER OUT
+  ========================= */
+
+  if (
+    result === "batter"
+  ) {
+
+    nextFirst =
+      hadFirst;
+
+    nextSecond =
+      hadSecond;
+
+    nextThird =
+      hadThird;
+
+
+    if (
+      hadThird
+    ) {
+
+      const scored =
+        await askYesNo(
+          "Did the runner from 3B score?"
+        );
+
+
+      if (
+        scored
+      ) {
+
+        runs++;
+
+        nextThird =
+          false;
+      }
+    }
+
+
+    if (
+      hadSecond &&
+      !nextThird
+    ) {
+
+      const advanced =
+        await askYesNo(
+          "Did the runner from 2B advance to 3B?"
+        );
+
+
+      if (
+        advanced
+      ) {
+
+        nextSecond =
+          false;
+
+        nextThird =
+          true;
+      }
+    }
+
+
+    if (
+      hadFirst &&
+      !nextSecond
+    ) {
+
+      const advanced =
+        await askYesNo(
+          "Did the runner from 1B advance to 2B?"
+        );
+
+
+      if (
+        advanced
+      ) {
+
+        nextFirst =
+          false;
+
+        nextSecond =
+          true;
+      }
+    }
   }
 
 
@@ -2397,20 +2796,20 @@ async function fieldersChoice() {
         || 0
       ) + 1,
 
-    balls:
-      0,
-
-    strikes:
-      0,
+    [scoreField]:
+      Number(
+        game[scoreField]
+        || 0
+      ) + runs,
 
     runner_first:
-      first,
+      nextFirst,
 
     runner_second:
-      second,
+      nextSecond,
 
     runner_third:
-      third
+      nextThird
   });
 }
 
@@ -2497,15 +2896,6 @@ async function doublePlay() {
     activePitchField();
 
 
-  /*
-    Default DP:
-    batter + lead runner are out.
-
-    Other runners stay unless
-    inning ends.
-  */
-
-
   const changes = {
 
     [pitchField]:
@@ -2539,7 +2929,7 @@ async function doublePlay() {
 
 
 /* =========================
-   BALL IN PLAY OUT
+   NORMAL OUT
 ========================= */
 
 async function ballInPlayOut() {
@@ -2578,7 +2968,7 @@ async function processOut(
 
 
 /* =========================
-   PROCESS MULTIPLE OUTS
+   MULTIPLE OUTS
 ========================= */
 
 async function processMultipleOuts(
