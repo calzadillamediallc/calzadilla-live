@@ -904,10 +904,9 @@ let pinchHitContext = {
 let decisionResolver = null;
 let choiceResolver = null;
 
-let autosaveTimers = {
-  away: null,
-  home: null
-};
+let autosaveTimers = {};
+
+let actionInProgress = null;
 
 
 let pitchSequence = {
@@ -919,6 +918,44 @@ let plateAppearanceStartPitchCount = {
   away: null,
   home: null
 };
+
+function batterSlotField(side) {
+  return side + "_current_batter_slot";
+}
+
+function pitchSequenceField(side) {
+  return side + "_pitch_sequence";
+}
+
+function plateAppearanceStartField(side) {
+  return side + "_pa_start_pitch_count";
+}
+
+function normalizedPitchSequence(value) {
+  return Array.isArray(value)
+    ? value.map(item => String(item))
+    : [];
+}
+
+function restorePlateAppearanceTrackingFromGame() {
+  pitchSequence = {
+    away: normalizedPitchSequence(game?.away_pitch_sequence),
+    home: normalizedPitchSequence(game?.home_pitch_sequence)
+  };
+
+  plateAppearanceStartPitchCount = {
+    away:
+      game?.away_pa_start_pitch_count === null ||
+      game?.away_pa_start_pitch_count === undefined
+        ? null
+        : Number(game.away_pa_start_pitch_count),
+    home:
+      game?.home_pa_start_pitch_count === null ||
+      game?.home_pa_start_pitch_count === undefined
+        ? null
+        : Number(game.home_pa_start_pitch_count)
+  };
+}
 
 function el(id) {
   return document.getElementById(id);
@@ -974,6 +1011,24 @@ function setAutosaveStatus(side, text, isError = false) {
 
   status.textContent = text;
   status.style.color = isError ? "#bd2e3d" : "#168b58";
+}
+
+function autosaveTimerKey(side, player) {
+  return side + ":" + String(player?.id || "unknown");
+}
+
+function clearPlayerAutosave(side, player) {
+  const key = autosaveTimerKey(side, player);
+
+  if (autosaveTimers[key]) {
+    clearTimeout(autosaveTimers[key]);
+    delete autosaveTimers[key];
+  }
+}
+
+function clearAllAutosaveTimers() {
+  Object.values(autosaveTimers).forEach(timer => clearTimeout(timer));
+  autosaveTimers = {};
 }
 
 function askYesNo(question) {
@@ -1273,6 +1328,21 @@ function recordPitchInSequence(side, type) {
   );
 }
 
+function nextPitchSequence(side, type) {
+  return [
+    ...pitchSequence[side],
+    getPitchSymbol(type)
+  ];
+}
+
+function plateAppearancePersistenceChanges(side, sequence) {
+  return {
+    [pitchSequenceField(side)]: sequence,
+    [plateAppearanceStartField(side)]:
+      plateAppearanceStartPitchCount[side]
+  };
+}
+
 function getPitchSequenceText(side) {
   return pitchSequence[side].join("-");
 }
@@ -1297,6 +1367,8 @@ async function loadGame() {
   }
 
   game = data;
+
+  restorePlateAppearanceTrackingFromGame();
 
   el("connectionStatus").innerText =
     "● LIVE — Supabase Connected";
@@ -1351,19 +1423,26 @@ async function updateGame(changes) {
   }
 
   game = data;
+  restorePlateAppearanceTrackingFromGame();
   render();
   return true;
 }
 
 function schedulePlayerAutosave(side, player) {
-  clearTimeout(autosaveTimers[side]);
+  const key = autosaveTimerKey(side, player);
+
+  clearPlayerAutosave(side, player);
 
   setAutosaveStatus(side, "Saving...");
 
-  autosaveTimers[side] =
+  autosaveTimers[key] =
     setTimeout(
       async () => {
-        await saveSinglePlayer(side, player);
+        try {
+          await saveSinglePlayer(side, player);
+        } finally {
+          delete autosaveTimers[key];
+        }
       },
       AUTOSAVE_DELAY
     );
@@ -1772,6 +1851,7 @@ async function saveRoster(side) {
   setAutosaveStatus(side, "Saving all...");
 
   for (const player of rosters[side]) {
+    clearPlayerAutosave(side, player);
     const success = await saveSinglePlayer(side, player);
     if (!success) return;
   }
@@ -1783,6 +1863,8 @@ async function deleteRosterPlayer(side, player) {
   if (!confirm("Delete " + playerLabel(player) + "?")) {
     return;
   }
+
+  clearPlayerAutosave(side, player);
 
   const { data, error } =
     await db
@@ -1936,6 +2018,8 @@ async function startNewGame() {
   if (!confirmed) {
     return;
   }
+
+  clearAllAutosaveTimers();
 
   el("connectionStatus").innerText =
     "Resetting new game...";
@@ -2109,7 +2193,31 @@ async function startNewGame() {
       "",
 
     away_pitch_count:
-      0
+      0,
+
+    current_batter_number:
+      "",
+
+    current_batter_name:
+      "",
+
+    away_current_batter_slot:
+      1,
+
+    home_current_batter_slot:
+      1,
+
+    away_pitch_sequence:
+      [],
+
+    home_pitch_sequence:
+      [],
+
+    away_pa_start_pitch_count:
+      null,
+
+    home_pa_start_pitch_count:
+      null
   };
 
   const {
@@ -2172,18 +2280,7 @@ async function startNewGame() {
     home: null
   };
 
-  clearTimeout(
-    autosaveTimers.away
-  );
-
-  clearTimeout(
-    autosaveTimers.home
-  );
-
-  autosaveTimers = {
-    away: null,
-    home: null
-  };
+  clearAllAutosaveTimers();
 
   setAutosaveStatus(
     "away",
@@ -2226,6 +2323,23 @@ function normalizeBatterIndex(side) {
   if (!lineup.length) {
     currentBatterIndex[side] = 0;
     return;
+  }
+
+  const persistedSlot =
+    Number(game?.[batterSlotField(side)]);
+
+  if (persistedSlot >= 1) {
+    const persistedIndex =
+      lineup.findIndex(
+        player =>
+          Number(player.batting_order) ===
+          persistedSlot
+      );
+
+    if (persistedIndex >= 0) {
+      currentBatterIndex[side] = persistedIndex;
+      return;
+    }
   }
 
   if (currentBatterIndex[side] >= lineup.length) {
@@ -2314,7 +2428,7 @@ function renderCurrentBatter() {
     playerLabel(lineup[nextIndex]);
 }
 
-function selectCurrentBatter() {
+async function selectCurrentBatter() {
   const side = battingSide();
 
   if (pinchHitContext[side]) {
@@ -2323,13 +2437,24 @@ function selectCurrentBatter() {
     return;
   }
 
-  currentBatterIndex[side] =
+  const lineup = getLineup(side);
+  const selectedIndex =
     Number(el("currentBatterSelect").value);
+  const selected = lineup[selectedIndex];
+
+  if (!selected) return;
+
+  currentBatterIndex[side] = selectedIndex;
+
+  await updateGame({
+    [batterSlotField(side)]:
+      Number(selected.batting_order)
+  });
 
   renderCurrentBatter();
 }
 
-function nextBatter() {
+async function nextBatter() {
   const side = battingSide();
 
   if (pinchHitContext[side]) {
@@ -2345,10 +2470,18 @@ function nextBatter() {
     (currentBatterIndex[side] + 1) %
     lineup.length;
 
+  await updateGame({
+    [batterSlotField(side)]:
+      Number(
+        lineup[currentBatterIndex[side]]
+          .batting_order
+      )
+  });
+
   renderCurrentBatter();
 }
 
-function previousBatter() {
+async function previousBatter() {
   const side = battingSide();
 
   if (pinchHitContext[side]) return;
@@ -2362,6 +2495,14 @@ function previousBatter() {
     currentBatterIndex[side] =
       lineup.length - 1;
   }
+
+  await updateGame({
+    [batterSlotField(side)]:
+      Number(
+        lineup[currentBatterIndex[side]]
+          .batting_order
+      )
+  });
 
   renderCurrentBatter();
 }
@@ -2504,6 +2645,11 @@ async function startPinchHit(side, substitute) {
 
   const lineup = getLineup(side);
 
+  if (!lineup.length) {
+    alert("No active lineup.");
+    return;
+  }
+
   const targetId =
     await askChoice(
       "Who is " +
@@ -2537,10 +2683,63 @@ async function startPinchHit(side, substitute) {
         String(original.id)
     );
 
+  const replacementPosition =
+    original.position || substitute.position || "";
+
+  const { error: originalError } =
+    await db
+      .from("game_rosters")
+      .update({ roster_status: "used" })
+      .eq("id", original.id)
+      .eq("game_code", GAME_CODE)
+      .eq("team_side", side);
+
+  if (originalError) {
+    alert(originalError.message);
+    return;
+  }
+
+  const { error: substituteError } =
+    await db
+      .from("game_rosters")
+      .update({
+        roster_status: "active",
+        batting_order: original.batting_order,
+        position: replacementPosition
+      })
+      .eq("id", substitute.id)
+      .eq("game_code", GAME_CODE)
+      .eq("team_side", side);
+
+  if (substituteError) {
+    await db
+      .from("game_rosters")
+      .update({ roster_status: "active" })
+      .eq("id", original.id)
+      .eq("game_code", GAME_CODE)
+      .eq("team_side", side);
+
+    alert(substituteError.message);
+    return;
+  }
+
+  original.roster_status = "used";
+  substitute.roster_status = "active";
+  substitute.batting_order = original.batting_order;
+  substitute.position = replacementPosition;
+
   pinchHitContext[side] = {
     substitute,
     original
   };
+
+  const batterSaved =
+    await updateGame({
+      [batterSlotField(side)]:
+        Number(original.batting_order)
+    });
+
+  if (!batterSaved) return;
 
   const snap = snapshotGame();
 
@@ -2560,6 +2759,7 @@ async function startPinchHit(side, substitute) {
     replacedPlayer: original
   });
 
+  await loadRosters();
   renderCurrentBatter();
 }
 
@@ -2567,22 +2767,36 @@ async function completePlateAppearance(side) {
   const ph = pinchHitContext[side];
 
   if (ph) {
-    await db
-      .from("game_rosters")
-      .update({ roster_status: "used" })
-      .eq("id", ph.substitute.id);
-
     pinchHitContext[side] = null;
-
-    await loadRosters();
   }
 
   const lineup = getLineup(side);
 
   if (lineup.length) {
+    normalizeBatterIndex(side);
+
     currentBatterIndex[side] =
       (currentBatterIndex[side] + 1) %
       lineup.length;
+
+    resetPlateAppearanceTracking(side);
+
+    await updateGame({
+      [batterSlotField(side)]:
+        Number(
+          lineup[currentBatterIndex[side]]
+            .batting_order
+        ),
+      [pitchSequenceField(side)]: [],
+      [plateAppearanceStartField(side)]: null
+    });
+  } else {
+    resetPlateAppearanceTracking(side);
+
+    await updateGame({
+      [pitchSequenceField(side)]: [],
+      [plateAppearanceStartField(side)]: null
+    });
   }
 
   renderCurrentBatter();
@@ -2622,11 +2836,19 @@ async function ball() {
     before
   );
 
+  const sequence =
+    nextPitchSequence(side, "BALL");
+
   const changes = {
     [pitchField]:
       Number(
         game[pitchField] || 0
-      ) + 1
+      ) + 1,
+
+    ...plateAppearancePersistenceChanges(
+      side,
+      sequence
+    )
   };
 
   if (game.balls >= 3) {
@@ -2644,10 +2866,7 @@ async function ball() {
 
     if (!success) return;
 
-    recordPitchInSequence(
-      side,
-      "BALL"
-    );
+    pitchSequence[side] = sequence;
 
     const after =
       snapshotGame();
@@ -2659,7 +2878,7 @@ async function ball() {
         after
       );
 
-    const sequence =
+    const sequenceText =
       getPitchSequenceText(
         side
       );
@@ -2671,7 +2890,7 @@ async function ball() {
       description:
         playerLabel(batter) +
         " walked. Pitch sequence: " +
-        sequence +
+        sequenceText +
         ". Final count: 4-" +
         before.strikes +
         ".",
@@ -2706,10 +2925,7 @@ async function ball() {
 
     if (!success) return;
 
-    recordPitchInSequence(
-      side,
-      "BALL"
-    );
+    pitchSequence[side] = sequence;
 
     const after =
       snapshotGame();
@@ -2755,6 +2971,14 @@ async function strike() {
     before
   );
 
+  const sequence =
+    nextPitchSequence(
+      side,
+      game.strikes >= 2
+        ? "STRIKEOUT"
+        : "STRIKE"
+    );
+
   const newPitch =
     Number(
       game[pitchField] || 0
@@ -2764,20 +2988,22 @@ async function strike() {
     const success =
       await processOut({
         [pitchField]:
-          newPitch
+          newPitch,
+
+        ...plateAppearancePersistenceChanges(
+          side,
+          sequence
+        )
       });
 
     if (!success) return;
 
-    recordPitchInSequence(
-      side,
-      "STRIKEOUT"
-    );
+    pitchSequence[side] = sequence;
 
     const after =
       snapshotGame();
 
-    const sequence =
+    const sequenceText =
       getPitchSequenceText(
         side
       );
@@ -2789,7 +3015,7 @@ async function strike() {
       description:
         playerLabel(batter) +
         " struck out. Pitch sequence: " +
-        sequence +
+        sequenceText +
         ". Final count: " +
         before.balls +
         "-2.",
@@ -2821,15 +3047,17 @@ async function strike() {
           ) + 1,
 
         [pitchField]:
-          newPitch
+          newPitch,
+
+        ...plateAppearancePersistenceChanges(
+          side,
+          sequence
+        )
       });
 
     if (!success) return;
 
-    recordPitchInSequence(
-      side,
-      "STRIKE"
-    );
+    pitchSequence[side] = sequence;
 
     const after =
       snapshotGame();
@@ -2875,11 +3103,19 @@ async function foul() {
     before
   );
 
+  const sequence =
+    nextPitchSequence(side, "FOUL");
+
   const changes = {
     [pitchField]:
       Number(
         game[pitchField] || 0
-      ) + 1
+      ) + 1,
+
+    ...plateAppearancePersistenceChanges(
+      side,
+      sequence
+    )
   };
 
   if (game.strikes < 2) {
@@ -2896,10 +3132,7 @@ async function foul() {
 
   if (!success) return;
 
-  recordPitchInSequence(
-    side,
-    "FOUL"
-  );
+  pitchSequence[side] = sequence;
 
   const after =
     snapshotGame();
@@ -2977,18 +3210,14 @@ async function hitByPitch() {
   await completePlateAppearance(side);
 }
 
-async function singleHit() {
-  const side = battingSide();
-  const batter = getCurrentBatterForSide(side);
-  const before = snapshotGame();
-  const notes = [];
-
+async function resolveOneBaseReachRunners(playLabel) {
   const hadFirst = Boolean(game.runner_first);
   const hadSecond = Boolean(game.runner_second);
   const hadThird = Boolean(game.runner_third);
 
+  const notes = [];
   let runs = 0;
-
+  let additionalOuts = 0;
   let nextFirst = true;
   let nextSecond = false;
   let nextThird = false;
@@ -3009,45 +3238,113 @@ async function singleHit() {
   }
 
   if (hadSecond) {
-    const scored =
-      await askYesNo(
-        "Did runner from 2B score?"
-      );
-
-    if (scored) {
-      runs++;
-      notes.push("Runner from 2B scored.");
+    if (nextThird) {
+      nextSecond = true;
+      notes.push("Runner from 2B held at 2B because 3B was occupied.");
     } else {
-      nextThird = true;
-      notes.push("Runner from 2B advanced to 3B.");
+      const scored =
+        await askYesNo(
+          "Did runner from 2B score?"
+        );
+
+      if (scored) {
+        runs++;
+        notes.push("Runner from 2B scored.");
+      } else {
+        nextThird = true;
+        notes.push("Runner from 2B advanced to 3B.");
+      }
     }
   }
 
   if (hadFirst) {
-    if (!nextThird) {
-      const advanced =
-        await askYesNo(
-          "Did runner from 1B advance to 3B?"
-        );
+    if (!nextSecond) {
+      if (!nextThird) {
+        const advanced =
+          await askYesNo(
+            "Did runner from 1B advance to 3B?"
+          );
 
-      if (advanced) {
-        nextThird = true;
-        notes.push("Runner from 1B advanced to 3B.");
+        if (advanced) {
+          nextThird = true;
+          notes.push("Runner from 1B advanced to 3B.");
+        } else {
+          nextSecond = true;
+          notes.push("Runner from 1B advanced to 2B.");
+        }
       } else {
         nextSecond = true;
         notes.push("Runner from 1B advanced to 2B.");
       }
     } else {
-      nextSecond = true;
-      notes.push("Runner from 1B advanced to 2B.");
+      const resolution =
+        await askChoice(
+          playLabel +
+          ": runners cannot share a base. Resolve the trailing runner.",
+          [
+            {
+              label: "RUNNER FROM 3B SCORED",
+              value: "third_scored",
+              className: "green"
+            },
+            {
+              label: "RUNNER FROM 2B OUT",
+              value: "second_out",
+              className: "red"
+            },
+            {
+              label: "RUNNER FROM 1B OUT",
+              value: "first_out",
+              className: "red"
+            }
+          ]
+        );
+
+      if (resolution === "third_scored") {
+        runs++;
+        notes.push(
+          "Runner from 3B scored; runners from 2B and 1B advanced one base."
+        );
+      } else if (resolution === "second_out") {
+        additionalOuts++;
+        nextSecond = true;
+        nextThird = true;
+        notes.push(
+          "Runner from 2B was out; runner from 1B advanced to 2B."
+        );
+      } else {
+        additionalOuts++;
+        notes.push("Runner from 1B was out advancing.");
+      }
     }
   }
+
+  return {
+    runs,
+    additionalOuts,
+    notes,
+    runner_first: nextFirst,
+    runner_second: nextSecond,
+    runner_third: nextThird
+  };
+}
+
+async function singleHit() {
+  const side = battingSide();
+  const batter = getCurrentBatterForSide(side);
+  const before = snapshotGame();
+  const runnerResult =
+    await resolveOneBaseReachRunners("SINGLE");
+  const {
+    runs,
+    additionalOuts,
+    notes
+  } = runnerResult;
 
   const scoreField = battingScoreField();
   const pitchField = activePitchField();
 
-  const success =
-    await updateGame({
+  const changes = {
       [scoreField]:
         Number(game[scoreField] || 0) +
         runs,
@@ -3059,10 +3356,18 @@ async function singleHit() {
       balls: 0,
       strikes: 0,
 
-      runner_first: nextFirst,
-      runner_second: nextSecond,
-      runner_third: nextThird
-    });
+      runner_first: runnerResult.runner_first,
+      runner_second: runnerResult.runner_second,
+      runner_third: runnerResult.runner_third
+    };
+
+  const success =
+    additionalOuts
+      ? await processMultipleOuts(
+          additionalOuts,
+          changes
+        )
+      : await updateGame(changes);
 
   if (!success) return;
 
@@ -3280,73 +3585,41 @@ async function errorPlay() {
   const side = battingSide();
   const batter = getCurrentBatterForSide(side);
   const before = snapshotGame();
-  const notes = [];
-
-  let runs = 0;
-  let nextFirst = true;
-  let nextSecond = false;
-  let nextThird = false;
-
-  if (game.runner_third) {
-    if (
-      await askYesNo(
-        "Did runner from 3B score?"
-      )
-    ) {
-      runs++;
-      notes.push("Runner from 3B scored.");
-    } else {
-      nextThird = true;
-    }
-  }
-
-  if (game.runner_second) {
-    if (
-      await askYesNo(
-        "Did runner from 2B score?"
-      )
-    ) {
-      runs++;
-      notes.push("Runner from 2B scored.");
-    } else {
-      nextThird = true;
-    }
-  }
-
-  if (game.runner_first) {
-    if (
-      !nextThird &&
-      await askYesNo(
-        "Did runner from 1B reach 3B?"
-      )
-    ) {
-      nextThird = true;
-      notes.push("Runner from 1B advanced to 3B.");
-    } else {
-      nextSecond = true;
-    }
-  }
+  const runnerResult =
+    await resolveOneBaseReachRunners("ERROR");
+  const {
+    runs,
+    additionalOuts,
+    notes
+  } = runnerResult;
 
   const scoreField = battingScoreField();
   const pitchField = activePitchField();
 
+  const changes = {
+    [scoreField]:
+      Number(game[scoreField] || 0) +
+      runs,
+
+    [pitchField]:
+      Number(game[pitchField] || 0) +
+      1,
+
+    balls: 0,
+    strikes: 0,
+
+    runner_first: runnerResult.runner_first,
+    runner_second: runnerResult.runner_second,
+    runner_third: runnerResult.runner_third
+  };
+
   const success =
-    await updateGame({
-      [scoreField]:
-        Number(game[scoreField] || 0) +
-        runs,
-
-      [pitchField]:
-        Number(game[pitchField] || 0) +
-        1,
-
-      balls: 0,
-      strikes: 0,
-
-      runner_first: nextFirst,
-      runner_second: nextSecond,
-      runner_third: nextThird
-    });
+    additionalOuts
+      ? await processMultipleOuts(
+          additionalOuts,
+          changes
+        )
+      : await updateGame(changes);
 
   if (!success) return;
 
@@ -3486,21 +3759,36 @@ async function fieldersChoice() {
 async function sacFly() {
   const side = battingSide();
   const batter = getCurrentBatterForSide(side);
-  const before = snapshotGame();
 
-  let runs = 0;
-  let third = Boolean(game.runner_third);
-
-  if (
-    third &&
-    await askYesNo(
-      "Did runner from 3B score?"
-    )
-  ) {
-    runs++;
-    third = false;
+  if (Number(game.outs || 0) >= 2) {
+    alert(
+      "Sacrifice fly is not available with two outs. No play was recorded."
+    );
+    return false;
   }
 
+  if (!game.runner_third) {
+    alert(
+      "Sacrifice fly requires a runner on third. Use OUT if no runner scored."
+    );
+    return false;
+  }
+
+  const before = snapshotGame();
+
+  const scored =
+    await askYesNo(
+      "Did runner from 3B score?"
+    );
+
+  if (!scored) {
+    alert(
+      "No sacrifice fly was recorded. Use OUT for a caught fly without a scoring runner."
+    );
+    return false;
+  }
+
+  const runs = 1;
   const scoreField = battingScoreField();
   const pitchField = activePitchField();
 
@@ -3514,7 +3802,7 @@ async function sacFly() {
         Number(game[pitchField] || 0) +
         1,
 
-      runner_third: third
+      runner_third: false
     });
 
   if (!success) return;
@@ -3543,6 +3831,36 @@ async function sacFly() {
 async function doublePlay() {
   const side = battingSide();
   const batter = getCurrentBatterForSide(side);
+
+  if (Number(game.outs || 0) >= 2) {
+    alert(
+      "Double play is not available with two outs. No play was recorded."
+    );
+    return false;
+  }
+
+  const occupiedBases = [
+    {
+      field: "runner_first",
+      label: "RUNNER FROM 1B"
+    },
+    {
+      field: "runner_second",
+      label: "RUNNER FROM 2B"
+    },
+    {
+      field: "runner_third",
+      label: "RUNNER FROM 3B"
+    }
+  ].filter(base => Boolean(game[base.field]));
+
+  if (!occupiedBases.length) {
+    alert(
+      "Double play requires an eligible baserunner. No play was recorded."
+    );
+    return false;
+  }
+
   const before = snapshotGame();
 
   const pitchField = activePitchField();
@@ -3556,9 +3874,28 @@ async function doublePlay() {
     strikes: 0
   };
 
-  if (game.runner_first) {
-    changes.runner_first = false;
+  let retiredRunner = occupiedBases[0];
+
+  if (occupiedBases.length > 1) {
+    const retiredField =
+      await askChoice(
+        "Which runner was retired with the batter?",
+        occupiedBases.map(base => ({
+          label: base.label,
+          value: base.field,
+          className: "red"
+        }))
+      );
+
+    retiredRunner =
+      occupiedBases.find(
+        base => base.field === retiredField
+      );
+
+    if (!retiredRunner) return false;
   }
+
+  changes[retiredRunner.field] = false;
 
   const success =
     await processMultipleOuts(
@@ -3574,7 +3911,9 @@ async function doublePlay() {
     eventType: "DOUBLE_PLAY",
     description:
       playerLabel(batter) +
-      " grounded into a double play.",
+      " grounded into a double play with " +
+      retiredRunner.label.toLowerCase() +
+      ".",
     side,
     batter,
     before,
@@ -3654,6 +3993,9 @@ async function processMultipleOuts(amount, extraChanges = {}) {
       runner_second: false,
       runner_third: false,
 
+      [pitchSequenceField(battingSide())]: [],
+      [plateAppearanceStartField(battingSide())]: null,
+
       inning_half: nextHalf,
       inning: nextInning
     });
@@ -3684,9 +4026,14 @@ async function manualOut(amount = 1) {
 }
 
 async function resetCount() {
+  const side = battingSide();
+  resetPlateAppearanceTracking(side);
+
   await updateGame({
     balls: 0,
-    strikes: 0
+    strikes: 0,
+    [pitchSequenceField(side)]: [],
+    [plateAppearanceStartField(side)]: null
   });
 }
 
@@ -3725,6 +4072,9 @@ async function changeScore(side, amount) {
 }
 
 async function toggleHalf() {
+  resetPlateAppearanceTracking("away");
+  resetPlateAppearanceTracking("home");
+
   await updateGame({
     inning_half:
       game.inning_half === "top"
@@ -3737,7 +4087,12 @@ async function toggleHalf() {
 
     runner_first: false,
     runner_second: false,
-    runner_third: false
+    runner_third: false,
+
+    away_pitch_sequence: [],
+    home_pitch_sequence: [],
+    away_pa_start_pitch_count: null,
+    home_pa_start_pitch_count: null
   });
 }
 
@@ -3968,6 +4323,85 @@ function renderGameLog(events) {
   });
 }
 
+function setActionControlsDisabled(disabled) {
+  document
+    .querySelectorAll("button")
+    .forEach(button => {
+      if (
+        button.closest("#decisionModal") ||
+        button.closest("#choiceModal")
+      ) {
+        return;
+      }
+
+      if (disabled) {
+        if (!button.disabled) {
+          button.dataset.actionLocked = "true";
+          button.disabled = true;
+        }
+        return;
+      }
+
+      if (button.dataset.actionLocked === "true") {
+        delete button.dataset.actionLocked;
+        button.disabled = false;
+      }
+    });
+}
+
+function withActionLock(actionName, action) {
+  return async function(...args) {
+    if (actionInProgress) {
+      return false;
+    }
+
+    actionInProgress = actionName;
+    setActionControlsDisabled(true);
+
+    try {
+      return await action.apply(this, args);
+    } finally {
+      actionInProgress = null;
+      setActionControlsDisabled(false);
+    }
+  };
+}
+
+updateTeams = withActionLock("UPDATE_TEAMS", updateTeams);
+startNewGame = withActionLock("START_NEW_GAME", startNewGame);
+addLineupPlayer = withActionLock("ADD_LINEUP_PLAYER", addLineupPlayer);
+addSubstitute = withActionLock("ADD_SUBSTITUTE", addSubstitute);
+saveRoster = withActionLock("SAVE_ROSTER", saveRoster);
+deleteRosterPlayer = withActionLock("DELETE_ROSTER_PLAYER", deleteRosterPlayer);
+selectCurrentBatter = withActionLock("SELECT_BATTER", selectCurrentBatter);
+nextBatter = withActionLock("NEXT_BATTER", nextBatter);
+previousBatter = withActionLock("PREVIOUS_BATTER", previousBatter);
+permanentSub = withActionLock("PERMANENT_SUB", permanentSub);
+startPinchHit = withActionLock("PINCH_HITTER", startPinchHit);
+ball = withActionLock("BALL", ball);
+strike = withActionLock("STRIKE", strike);
+foul = withActionLock("FOUL", foul);
+hitByPitch = withActionLock("HBP", hitByPitch);
+singleHit = withActionLock("SINGLE", singleHit);
+doubleHit = withActionLock("DOUBLE", doubleHit);
+tripleHit = withActionLock("TRIPLE", tripleHit);
+homeRun = withActionLock("HOME_RUN", homeRun);
+errorPlay = withActionLock("ERROR", errorPlay);
+fieldersChoice = withActionLock("FIELDERS_CHOICE", fieldersChoice);
+sacFly = withActionLock("SAC_FLY", sacFly);
+doublePlay = withActionLock("DOUBLE_PLAY", doublePlay);
+ballInPlayOut = withActionLock("OUT", ballInPlayOut);
+manualOut = withActionLock("MANUAL_OUT", manualOut);
+resetCount = withActionLock("RESET_COUNT", resetCount);
+manualCount = withActionLock("MANUAL_COUNT", manualCount);
+changeScore = withActionLock("CHANGE_SCORE", changeScore);
+toggleHalf = withActionLock("TOGGLE_HALF", toggleHalf);
+changeInning = withActionLock("CHANGE_INNING", changeInning);
+toggleBase = withActionLock("TOGGLE_BASE", toggleBase);
+savePitcher = withActionLock("SAVE_PITCHER", savePitcher);
+adjustPitchCount = withActionLock("ADJUST_PITCH_COUNT", adjustPitchCount);
+newPitcher = withActionLock("NEW_PITCHER", newPitcher);
+
 db
   .channel(
     "calzadilla-live-" +
@@ -3983,6 +4417,7 @@ db
     },
     payload => {
       game = payload.new;
+      restorePlateAppearanceTrackingFromGame();
       render();
     }
   )
