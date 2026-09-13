@@ -393,8 +393,8 @@
 
     <div class="notice">
       Update Teams changes only the team names.
-      Start New Game resets the scoreboard, inning,
-      bases and pitch counts.
+      Start New Game resets score, inning, count,
+      outs, bases and pitch counts.
     </div>
 
   </div>
@@ -459,9 +459,7 @@
 
     <strong>Inning</strong>
 
-    <div
-      id="inningDisplay"
-      class="inning-display">
+    <div id="inningDisplay" class="inning-display">
       TOP 1
     </div>
 
@@ -483,9 +481,7 @@
 
     <strong>Pitch Controls</strong>
 
-    <div
-      class="pitch-actions"
-      style="margin-top:12px;">
+    <div class="pitch-actions" style="margin-top:12px;">
 
       <button class="green" onclick="ball()">
         BALL
@@ -749,9 +745,7 @@ const db =
 let game = null;
 
 
-/* =========================
-   LOAD GAME
-========================= */
+/* LOAD */
 
 async function loadGame() {
 
@@ -785,9 +779,7 @@ async function loadGame() {
 }
 
 
-/* =========================
-   RENDER
-========================= */
+/* RENDER */
 
 function render() {
 
@@ -834,7 +826,6 @@ function render() {
     setupAway.value =
       game.away_team || "";
   }
-
 
   if (
     document.activeElement !==
@@ -918,7 +909,6 @@ function render() {
       game.home_pitcher_number || "";
   }
 
-
   if (
     document.activeElement !==
     homePitcherName
@@ -927,7 +917,6 @@ function render() {
       game.home_pitcher_name || "";
   }
 
-
   if (
     document.activeElement !==
     awayPitcherNumber
@@ -935,7 +924,6 @@ function render() {
     awayPitcherNumber.value =
       game.away_pitcher_number || "";
   }
-
 
   if (
     document.activeElement !==
@@ -962,9 +950,7 @@ function render() {
 }
 
 
-/* =========================
-   UPDATE GAME
-========================= */
+/* UPDATE */
 
 async function updateGame(changes) {
 
@@ -993,9 +979,7 @@ async function updateGame(changes) {
 }
 
 
-/* =========================
-   UPDATE TEAMS
-========================= */
+/* UPDATE TEAMS */
 
 async function updateTeams() {
 
@@ -1014,13 +998,14 @@ async function updateTeams() {
   if (!away || !home) {
 
     alert(
-      "Enter both Away and Home teams."
+      "Enter both teams."
     );
 
     return;
   }
 
   await updateGame({
+
     away_team:
       away.toUpperCase(),
 
@@ -1030,16 +1015,9 @@ async function updateTeams() {
 }
 
 
-/* =========================
-   START NEW GAME
-========================= */
+/* START NEW GAME */
 
 async function startNewGame() {
-
-  if (!game) {
-    alert("Game is not loaded yet.");
-    return;
-  }
 
   const away =
     document
@@ -1054,172 +1032,80 @@ async function startNewGame() {
       .trim();
 
   if (!away || !home) {
-    alert("Enter both Away and Home teams.");
-    return;
-  }
-
-  const ok =
-    confirm(
-      "START NEW GAME?\n\n" +
-      away.toUpperCase() +
-      " vs " +
-      home.toUpperCase() +
-      "\n\nReset score, inning, count, outs, bases and pitch counts?"
-    );
-
-  if (!ok) return;
-
-
-  /* CORE RESET */
-
-  const coreReset = {
-
-    away_team:
-      away.toUpperCase(),
-
-    home_team:
-      home.toUpperCase(),
-
-    away_score:
-      0,
-
-    home_score:
-      0,
-
-    inning:
-      1,
-
-    inning_half:
-      "top",
-
-    balls:
-      0,
-
-    strikes:
-      0,
-
-    outs:
-      0,
-
-    runner_first:
-      false,
-
-    runner_second:
-      false,
-
-    runner_third:
-      false
-  };
-
-
-  const coreResult =
-    await db
-      .from("live_games")
-      .update(coreReset)
-      .eq(
-        "game_code",
-        GAME_CODE
-      )
-      .select()
-      .single();
-
-
-  if (coreResult.error) {
-
-    console.error(
-      "CORE RESET ERROR:",
-      coreResult.error
-    );
 
     alert(
-      "RESET FAILED:\n\n" +
-      coreResult.error.message
+      "Enter both teams."
     );
 
     return;
   }
 
 
-  game =
-    coreResult.data;
+  const success =
+    await updateGame({
 
-  render();
+      away_team:
+        away.toUpperCase(),
 
+      home_team:
+        home.toUpperCase(),
 
-  /* PITCHER RESET */
+      away_score:
+        0,
 
-  const pitcherReset = {
+      home_score:
+        0,
 
-    home_pitcher_number:
-      "",
+      inning:
+        1,
 
-    home_pitcher_name:
-      "",
+      inning_half:
+        "top",
 
-    home_pitch_count:
-      0,
+      balls:
+        0,
 
-    away_pitcher_number:
-      "",
+      strikes:
+        0,
 
-    away_pitcher_name:
-      "",
+      outs:
+        0,
 
-    away_pitch_count:
-      0
-  };
+      runner_first:
+        false,
 
+      runner_second:
+        false,
 
-  const pitcherResult =
-    await db
-      .from("live_games")
-      .update(pitcherReset)
-      .eq(
-        "game_code",
-        GAME_CODE
-      )
-      .select()
-      .single();
+      runner_third:
+        false,
 
+      home_pitch_count:
+        0,
 
-  if (
-    !pitcherResult.error
-  ) {
-
-    game =
-      pitcherResult.data;
-
-    render();
-
-  } else {
-
-    console.warn(
-      "Pitcher reset failed:",
-      pitcherResult.error
-    );
-  }
+      away_pitch_count:
+        0
+    });
 
 
-  document
-    .getElementById(
+  if (success) {
+
+    document.getElementById(
       "connectionStatus"
-    )
-    .innerText =
+    ).innerText =
       "● LIVE — Supabase Connected";
 
-
-  alert(
-    "NEW GAME READY\n\n" +
-    away.toUpperCase() +
-    " vs " +
-    home.toUpperCase()
-  );
+    alert(
+      "NEW GAME READY\n\n" +
+      away.toUpperCase() +
+      " vs " +
+      home.toUpperCase()
+    );
+  }
 }
 
 
-/* =========================
-   ACTIVE PITCHER
-========================= */
+/* ACTIVE PITCHER */
 
 function activePitcherSide() {
 
@@ -1229,9 +1115,7 @@ function activePitcherSide() {
 }
 
 
-/* =========================
-   BALL
-========================= */
+/* BALL */
 
 async function ball() {
 
@@ -1331,9 +1215,7 @@ async function ball() {
 }
 
 
-/* =========================
-   STRIKE
-========================= */
+/* STRIKE */
 
 async function strike() {
 
@@ -1376,9 +1258,7 @@ async function strike() {
 }
 
 
-/* =========================
-   FOUL
-========================= */
+/* FOUL */
 
 async function foul() {
 
@@ -1415,9 +1295,7 @@ async function foul() {
 }
 
 
-/* =========================
-   PROCESS OUT
-========================= */
+/* PROCESS OUT */
 
 async function processOut(
   extraChanges = {}
@@ -1432,6 +1310,7 @@ async function processOut(
   ) {
 
     let nextHalf;
+
     let nextInning =
       game.inning;
 
@@ -1502,9 +1381,7 @@ async function processOut(
 }
 
 
-/* =========================
-   MANUAL OUT
-========================= */
+/* MANUAL OUT */
 
 async function manualOut(
   amount = 1
@@ -1517,6 +1394,7 @@ async function manualOut(
   ) {
 
     await processOut();
+
     return;
   }
 
@@ -1532,9 +1410,7 @@ async function manualOut(
 }
 
 
-/* =========================
-   RESET COUNT
-========================= */
+/* RESET COUNT */
 
 async function resetCount() {
 
@@ -1549,9 +1425,7 @@ async function resetCount() {
 }
 
 
-/* =========================
-   MANUAL COUNT
-========================= */
+/* MANUAL COUNT */
 
 async function manualCount(
   field,
@@ -1588,9 +1462,7 @@ async function manualCount(
 }
 
 
-/* =========================
-   SCORE
-========================= */
+/* SCORE */
 
 async function changeScore(
   side,
@@ -1615,9 +1487,7 @@ async function changeScore(
 }
 
 
-/* =========================
-   HALF
-========================= */
+/* HALF */
 
 async function toggleHalf() {
 
@@ -1651,9 +1521,7 @@ async function toggleHalf() {
 }
 
 
-/* =========================
-   INNING
-========================= */
+/* INNING */
 
 async function changeInning(
   amount
@@ -1672,9 +1540,7 @@ async function changeInning(
 }
 
 
-/* =========================
-   BASES
-========================= */
+/* BASES */
 
 async function toggleBase(
   field
@@ -1688,9 +1554,7 @@ async function toggleBase(
 }
 
 
-/* =========================
-   SAVE PITCHER
-========================= */
+/* SAVE PITCHER */
 
 async function savePitcher(
   side
@@ -1729,9 +1593,7 @@ async function savePitcher(
 }
 
 
-/* =========================
-   ADJUST PITCH COUNT
-========================= */
+/* ADJUST PITCH COUNT */
 
 async function adjustPitchCount(
   side,
@@ -1756,9 +1618,7 @@ async function adjustPitchCount(
 }
 
 
-/* =========================
-   PITCHING CHANGE
-========================= */
+/* PITCHING CHANGE */
 
 async function newPitcher(
   side
@@ -1803,9 +1663,7 @@ async function newPitcher(
 }
 
 
-/* =========================
-   REALTIME
-========================= */
+/* REALTIME */
 
 db
   .channel(
@@ -1845,9 +1703,7 @@ db
   .subscribe();
 
 
-/* =========================
-   START
-========================= */
+/* START */
 
 loadGame();
 
