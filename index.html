@@ -460,6 +460,7 @@
     .event-walk { border-left-color: #9e7900; }
     .event-sub { border-left-color: #6f42c1; }
     .event-pitcher { border-left-color: #d97706; }
+    .event-pitch { border-left-color: #4a90e2; }
 
     #decisionModal,
     #choiceModal {
@@ -1845,8 +1846,15 @@ async function updateTeams() {
 }
 
 async function startNewGame() {
-  const away = el("setupAwayTeam").value.trim();
-  const home = el("setupHomeTeam").value.trim();
+  const away =
+    el("setupAwayTeam")
+      .value
+      .trim();
+
+  const home =
+    el("setupHomeTeam")
+      .value
+      .trim();
 
   if (!away || !home) {
     alert("Enter both teams.");
@@ -1859,56 +1867,204 @@ async function startNewGame() {
       away +
       " vs " +
       home +
-      "\n\nThis resets score, inning, count, outs, bases, pitch counts and Game Log."
+      "\n\nThis will erase the current score, inning, count, bases, pitchers, pitch counts, Game Log AND both team lineups/substitutes."
     );
 
-  if (!confirmed) return;
+  if (!confirmed) {
+    return;
+  }
 
-  currentBatterIndex = { away: 0, home: 0 };
-  pinchHitContext = { away: null, home: null };
+  currentBatterIndex = {
+    away: 0,
+    home: 0
+  };
 
-  const success =
-    await updateGame({
-      away_team: away.toUpperCase(),
-      home_team: home.toUpperCase(),
+  pinchHitContext = {
+    away: null,
+    home: null
+  };
 
-      away_score: 0,
-      home_score: 0,
+  const resetData = {
+    away_team:
+      away.toUpperCase(),
 
-      inning: 1,
-      inning_half: "top",
+    home_team:
+      home.toUpperCase(),
 
-      balls: 0,
-      strikes: 0,
-      outs: 0,
+    away_score:
+      0,
 
-      runner_first: false,
-      runner_second: false,
-      runner_third: false,
+    home_score:
+      0,
 
-      home_pitch_count: 0,
-      away_pitch_count: 0
-    });
+    inning:
+      1,
 
-  if (!success) return;
+    inning_half:
+      "top",
 
-  const { error } =
+    balls:
+      0,
+
+    strikes:
+      0,
+
+    outs:
+      0,
+
+    runner_first:
+      false,
+
+    runner_second:
+      false,
+
+    runner_third:
+      false,
+
+    home_pitcher_number:
+      "",
+
+    home_pitcher_name:
+      "",
+
+    home_pitch_count:
+      0,
+
+    away_pitcher_number:
+      "",
+
+    away_pitcher_name:
+      "",
+
+    away_pitch_count:
+      0
+  };
+
+  const {
+    data,
+    error
+  } =
+    await db
+      .from("live_games")
+      .update(resetData)
+      .eq(
+        "game_code",
+        GAME_CODE
+      )
+      .select()
+      .single();
+
+  if (error) {
+    console.error(
+      "START NEW GAME RESET ERROR:",
+      error
+    );
+
+    alert(
+      "Could not start new game:\n" +
+      error.message
+    );
+
+    return;
+  }
+
+  game = data;
+
+  /*
+    Delete the old Game Log.
+  */
+  const {
+    error:
+      logError
+  } =
     await db
       .from("game_events")
       .delete()
-      .eq("game_code", GAME_CODE);
+      .eq(
+        "game_code",
+        GAME_CODE
+      );
 
-  if (error) {
-    console.error("CLEAR GAME LOG ERROR:", error);
+  if (logError) {
+    console.error(
+      "CLEAR GAME LOG ERROR:",
+      logError
+    );
 
     alert(
-      "Game reset, but Game Log could not be cleared:\n" +
-      error.message
+      "The game reset, but the Game Log could not be cleared:\n" +
+      logError.message
     );
+
+    return;
   }
 
+  /*
+    Delete the complete roster for BOTH teams:
+    - Active lineup
+    - Substitutes
+    - Used / Out
+  */
+  const {
+    error:
+      rosterError
+  } =
+    await db
+      .from("game_rosters")
+      .delete()
+      .eq(
+        "game_code",
+        GAME_CODE
+      );
+
+  if (rosterError) {
+    console.error(
+      "CLEAR ROSTER ERROR:",
+      rosterError
+    );
+
+    alert(
+      "The game reset, but the lineups could not be cleared:\n" +
+      rosterError.message
+    );
+
+    return;
+  }
+
+  /*
+    Clear local roster state immediately.
+  */
+  rosters = {
+    away: [],
+    home: []
+  };
+
+  setAutosaveStatus(
+    "away",
+    "AutoSave ready"
+  );
+
+  setAutosaveStatus(
+    "home",
+    "AutoSave ready"
+  );
+
+  render();
+
   await loadGameEvents();
+
+  renderRosterManager();
+  renderCurrentBatter();
+
+  alert(
+    "New game ready!\n\n" +
+    away.toUpperCase() +
+    " vs " +
+    home.toUpperCase() +
+    "\n\nScore, Game Log and both rosters were cleared."
+  );
 }
+
 
 function normalizeBatterIndex(side) {
   const lineup = getLineup(side);
@@ -2324,11 +2480,36 @@ async function ball() {
     const after = snapshotGame();
     const runs = getRunsBetween(side, before, after);
 
+    /* LOG THE ACTUAL PITCH */
+    await logGameEvent({
+      eventType: "BALL",
+      description:
+        "Ball four to " +
+        playerLabel(batter) +
+        ". Count was " +
+        before.balls +
+        "-" +
+        before.strikes +
+        ".",
+      side,
+      batter,
+      before,
+      after,
+      runs: 0,
+      rbi: 0
+    });
+
+    /* LOG THE COMPLETED PLATE APPEARANCE */
     await logGameEvent({
       eventType: "WALK",
       description:
         playerLabel(batter) +
-        " walked.",
+        " walked." +
+        (
+          runs
+            ? " " + runs + " run(s) scored on the force."
+            : ""
+        ),
       side,
       batter,
       before,
@@ -2338,11 +2519,40 @@ async function ball() {
     });
 
     await completePlateAppearance(side);
+
   } else {
     changes.balls =
       Number(game.balls) + 1;
 
-    await updateGame(changes);
+    const success =
+      await updateGame(changes);
+
+    if (!success) return;
+
+    const after =
+      snapshotGame();
+
+    await logGameEvent({
+      eventType: "BALL",
+      description:
+        "Ball to " +
+        playerLabel(batter) +
+        ". Count " +
+        before.balls +
+        "-" +
+        before.strikes +
+        " → " +
+        after.balls +
+        "-" +
+        after.strikes +
+        ".",
+      side,
+      batter,
+      before,
+      after,
+      runs: 0,
+      rbi: 0
+    });
   }
 }
 
@@ -2363,8 +2573,25 @@ async function strike() {
 
     if (!success) return;
 
-    const after = snapshotGame();
+    const after =
+      snapshotGame();
 
+    /* LOG STRIKE THREE AS A PITCH */
+    await logGameEvent({
+      eventType: "STRIKE",
+      description:
+        "Strike three to " +
+        playerLabel(batter) +
+        ".",
+      side,
+      batter,
+      before,
+      after,
+      runs: 0,
+      rbi: 0
+    });
+
+    /* LOG THE COMPLETED PLATE APPEARANCE */
     await logGameEvent({
       eventType: "STRIKEOUT",
       description:
@@ -2379,18 +2606,50 @@ async function strike() {
     });
 
     await completePlateAppearance(side);
-  } else {
-    await updateGame({
-      strikes:
-        Number(game.strikes) + 1,
 
-      [pitchField]:
-        newPitch
+  } else {
+    const success =
+      await updateGame({
+        strikes:
+          Number(game.strikes) + 1,
+
+        [pitchField]:
+          newPitch
+      });
+
+    if (!success) return;
+
+    const after =
+      snapshotGame();
+
+    await logGameEvent({
+      eventType: "STRIKE",
+      description:
+        "Strike to " +
+        playerLabel(batter) +
+        ". Count " +
+        before.balls +
+        "-" +
+        before.strikes +
+        " → " +
+        after.balls +
+        "-" +
+        after.strikes +
+        ".",
+      side,
+      batter,
+      before,
+      after,
+      runs: 0,
+      rbi: 0
     });
   }
 }
 
 async function foul() {
+  const side = battingSide();
+  const batter = getCurrentBatterForSide(side);
+  const before = snapshotGame();
   const pitchField = activePitchField();
 
   const changes = {
@@ -2403,7 +2662,39 @@ async function foul() {
       Number(game.strikes) + 1;
   }
 
-  await updateGame(changes);
+  const success =
+    await updateGame(changes);
+
+  if (!success) return;
+
+  const after =
+    snapshotGame();
+
+  await logGameEvent({
+    eventType: "FOUL",
+    description:
+      "Foul ball by " +
+      playerLabel(batter) +
+      ". Count " +
+      before.balls +
+      "-" +
+      before.strikes +
+      " → " +
+      after.balls +
+      "-" +
+      after.strikes +
+      (
+        before.strikes >= 2
+          ? " (count stays at two strikes)."
+          : "."
+      ),
+    side,
+    batter,
+    before,
+    after,
+    runs: 0,
+    rbi: 0
+  });
 }
 
 async function hitByPitch() {
@@ -3355,6 +3646,12 @@ function renderGameLog(events) {
       ["WALK","HBP"].includes(event.event_type)
     ) {
       eventClass = "event-walk";
+    }
+
+    if (
+      ["BALL","STRIKE","FOUL"].includes(event.event_type)
+    ) {
+      eventClass = "event-pitch";
     }
 
     if (
