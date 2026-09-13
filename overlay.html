@@ -10,6 +10,13 @@
 
 <style>
 
+@font-face {
+  font-family: "Bigail";
+  src: url("Bigail.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -22,7 +29,6 @@ body {
   height: 100%;
   overflow: hidden;
   background: transparent !important;
-  font-family: Arial, Helvetica, sans-serif;
 }
 
 #overlay {
@@ -33,13 +39,8 @@ body {
   width: 746px;
   height: 283px;
 
-  background: transparent;
+  font-family: "Bigail", Arial, sans-serif;
 }
-
-
-/* ========================================
-   MAIN ART
-======================================== */
 
 #scoreboardArt {
   position: absolute;
@@ -49,12 +50,13 @@ body {
   height: 283px;
 
   pointer-events: none;
+  z-index: 1;
 }
 
 
-/* ========================================
+/* =============================
    TOP / BOTTOM
-======================================== */
+============================= */
 
 #half {
   position: absolute;
@@ -62,7 +64,7 @@ body {
   left: 322px;
   top: 76px;
 
-  width: 58px;
+  width: 55px;
   height: 25px;
 
   display: flex;
@@ -72,38 +74,15 @@ body {
   color: #10266f;
 
   font-size: 17px;
-  font-weight: 900;
+  font-weight: normal;
+
+  z-index: 10;
 }
 
 
-/* ========================================
-   COUNT — 2-1
-======================================== */
-
-#count {
-  position: absolute;
-
-  left: 378px;
-  top: 76px;
-
-  width: 48px;
-  height: 25px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  color: #10266f;
-
-  font-size: 17px;
-  font-weight: 900;
-}
-
-
-/* ========================================
+/* =============================
    INNING
-   BLUE BOX
-======================================== */
+============================= */
 
 #inning {
   position: absolute;
@@ -120,14 +99,40 @@ body {
 
   color: white;
 
-  font-size: 23px;
-  font-weight: 900;
+  font-size: 24px;
+
+  z-index: 10;
 }
 
 
-/* ========================================
+/* =============================
+   COUNT
+============================= */
+
+#count {
+  position: absolute;
+
+  left: 494px;
+  top: 76px;
+
+  width: 55px;
+  height: 25px;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  color: #10266f;
+
+  font-size: 17px;
+
+  z-index: 10;
+}
+
+
+/* =============================
    TEAM NAMES
-======================================== */
+============================= */
 
 .team-name {
   position: absolute;
@@ -138,30 +143,25 @@ body {
   display: flex;
   align-items: center;
 
+  padding-left: 9px;
+
   color: white;
 
-  font-size: 13px;
-  font-weight: 900;
-
-  padding-left: 9px;
+  font-size: 14px;
 
   text-transform: uppercase;
 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  z-index: 10;
 }
-
-
-/* AWAY — TOP BLUE BAR */
 
 #awayName {
   left: 311px;
   top: 136px;
 }
-
-
-/* HOME — BOTTOM BLUE BAR */
 
 #homeName {
   left: 311px;
@@ -169,11 +169,14 @@ body {
 }
 
 
-/* ========================================
-   SCORES
-======================================== */
+/* =============================
+   SCORE DIGITS
 
-.score {
+   LEFT = tens
+   RIGHT = units
+============================= */
+
+.score-digit {
   position: absolute;
 
   width: 32px;
@@ -185,60 +188,71 @@ body {
 
   color: white;
 
-  font-size: 21px;
-  font-weight: 900;
+  font-size: 22px;
+
+  z-index: 10;
 }
 
 
-/* AWAY SCORE */
+/* AWAY */
 
-#awayScore {
+#awayTens {
   left: 432px;
   top: 136px;
 }
 
+#awayOnes {
+  left: 470px;
+  top: 136px;
+}
 
-/* HOME SCORE */
 
-#homeScore {
+/* HOME */
+
+#homeTens {
   left: 432px;
   top: 178px;
 }
 
+#homeOnes {
+  left: 470px;
+  top: 178px;
+}
 
-/* ========================================
+
+/* =============================
    OUTS
-======================================== */
+============================= */
 
 .out-indicator {
   position: absolute;
 
-  width: 17px;
-  height: 17px;
+  width: 15px;
+  height: 15px;
+
+  border-radius: 50%;
+
+  background: #ffe600;
 
   display: none;
+
+  z-index: 15;
 }
-
-
-/* first circle */
 
 #out1 {
-  left: 508px;
-  top: 176px;
+  left: 518px;
+  top: 190px;
 }
-
-
-/* second circle */
 
 #out2 {
-  left: 527px;
-  top: 176px;
+  left: 537px;
+  top: 190px;
 }
 
 
-/* ========================================
-   BASE RUNNERS
-======================================== */
+/* =============================
+   RUNNERS
+============================= */
 
 .runner {
   position: absolute;
@@ -247,66 +261,50 @@ body {
   height: 25px;
 
   display: none;
+
+  object-fit: contain;
+
+  z-index: 15;
 }
-
-
-/* SECOND BASE */
-
-#runnerSecond {
-  left: 605px;
-  top: 50px;
-}
-
-
-/* THIRD BASE */
-
-#runnerThird {
-  left: 527px;
-  top: 128px;
-}
-
-
-/* FIRST BASE */
 
 #runnerFirst {
   left: 685px;
   top: 128px;
 }
 
+#runnerSecond {
+  left: 605px;
+  top: 50px;
+}
+
+#runnerThird {
+  left: 527px;
+  top: 128px;
+}
+
 </style>
 </head>
-
 
 <body>
 
 <div id="overlay">
 
-  <!-- MAIN SCOREBOARD -->
-
   <img
     id="scoreboardArt"
     src="BOX SCORE 2026.png"
-    alt="">
-
-
-  <!-- TOP / BOTTOM -->
+    alt=""
+  >
 
   <div id="half">
     TOP
   </div>
 
-
-  <!-- COUNT -->
+  <div id="inning">
+    1
+  </div>
 
   <div id="count">
     0-0
-  </div>
-
-
-  <!-- INNING -->
-
-  <div id="inning">
-    1
   </div>
 
 
@@ -319,8 +317,13 @@ body {
   </div>
 
   <div
-    id="awayScore"
-    class="score">
+    id="awayTens"
+    class="score-digit">
+  </div>
+
+  <div
+    id="awayOnes"
+    class="score-digit">
     0
   </div>
 
@@ -334,50 +337,57 @@ body {
   </div>
 
   <div
-    id="homeScore"
-    class="score">
+    id="homeTens"
+    class="score-digit">
+  </div>
+
+  <div
+    id="homeOnes"
+    class="score-digit">
     0
   </div>
 
 
   <!-- OUTS -->
 
-  <img
+  <div
     id="out1"
-    class="out-indicator"
-    src="BOX OUT.png">
+    class="out-indicator">
+  </div>
 
-  <img
+  <div
     id="out2"
-    class="out-indicator"
-    src="BOX OUT.png">
+    class="out-indicator">
+  </div>
 
 
-  <!-- RUNNERS -->
+  <!-- BASES -->
 
   <img
     id="runnerFirst"
     class="runner"
-    src="BOX BASES.png">
+    src="BOX BASES.png"
+    alt=""
+  >
 
   <img
     id="runnerSecond"
     class="runner"
-    src="BOX BASES.png">
+    src="BOX BASES.png"
+    alt=""
+  >
 
   <img
     id="runnerThird"
     class="runner"
-    src="BOX BASES.png">
+    src="BOX BASES.png"
+    alt=""
+  >
 
 </div>
 
 
 <script>
-
-/* ========================================
-   SUPABASE
-======================================== */
 
 const SUPABASE_URL =
   "https://smaqspbeeouzgbwskbnx.supabase.co";
@@ -388,20 +398,18 @@ const SUPABASE_KEY =
 const GAME_CODE =
   "TEST001";
 
-
 const db =
   window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
   );
 
-
 let game = null;
 
 
-/* ========================================
-   LOAD
-======================================== */
+/* =============================
+   LOAD GAME
+============================= */
 
 async function loadGame() {
 
@@ -415,14 +423,15 @@ async function loadGame() {
       )
       .single();
 
-
   if (error) {
 
-    console.error(error);
+    console.error(
+      "Error loading game:",
+      error
+    );
 
     return;
   }
-
 
   game = data;
 
@@ -430,9 +439,47 @@ async function loadGame() {
 }
 
 
-/* ========================================
+/* =============================
+   SCORE DIGITS
+============================= */
+
+function renderScore(
+  score,
+  tensId,
+  onesId
+) {
+
+  const value =
+    Math.max(
+      0,
+      Number(score || 0)
+    );
+
+  const tens =
+    Math.floor(value / 10);
+
+  const ones =
+    value % 10;
+
+
+  document
+    .getElementById(tensId)
+    .textContent =
+      tens > 0
+        ? tens
+        : "";
+
+
+  document
+    .getElementById(onesId)
+    .textContent =
+      ones;
+}
+
+
+/* =============================
    RENDER
-======================================== */
+============================= */
 
 function render() {
 
@@ -444,37 +491,37 @@ function render() {
   document
     .getElementById("awayName")
     .textContent =
-      game.away_team;
-
+      game.away_team || "AWAY";
 
   document
     .getElementById("homeName")
     .textContent =
-      game.home_team;
+      game.home_team || "HOME";
 
 
   /* SCORES */
 
-  document
-    .getElementById("awayScore")
-    .textContent =
-      game.away_score;
+  renderScore(
+    game.away_score,
+    "awayTens",
+    "awayOnes"
+  );
+
+  renderScore(
+    game.home_score,
+    "homeTens",
+    "homeOnes"
+  );
 
 
-  document
-    .getElementById("homeScore")
-    .textContent =
-      game.home_score;
-
-
-  /* TOP / BOTTOM */
+  /* HALF */
 
   document
     .getElementById("half")
     .textContent =
-      game.inning_half === "top"
-        ? "TOP"
-        : "BOT";
+      game.inning_half === "bottom"
+        ? "BOT"
+        : "TOP";
 
 
   /* INNING */
@@ -482,7 +529,7 @@ function render() {
   document
     .getElementById("inning")
     .textContent =
-      game.inning;
+      game.inning ?? 1;
 
 
   /* COUNT */
@@ -490,30 +537,32 @@ function render() {
   document
     .getElementById("count")
     .textContent =
-      game.balls
+      (game.balls ?? 0)
       + "-"
-      + game.strikes;
+      + (game.strikes ?? 0);
 
 
   /* OUTS */
 
+  const outs =
+    Number(game.outs || 0);
+
   document
     .getElementById("out1")
     .style.display =
-      game.outs >= 1
+      outs >= 1
         ? "block"
         : "none";
-
 
   document
     .getElementById("out2")
     .style.display =
-      game.outs >= 2
+      outs >= 2
         ? "block"
         : "none";
 
 
-  /* FIRST */
+  /* BASES */
 
   document
     .getElementById("runnerFirst")
@@ -522,9 +571,6 @@ function render() {
         ? "block"
         : "none";
 
-
-  /* SECOND */
-
   document
     .getElementById("runnerSecond")
     .style.display =
@@ -532,22 +578,18 @@ function render() {
         ? "block"
         : "none";
 
-
-  /* THIRD */
-
   document
     .getElementById("runnerThird")
     .style.display =
       game.runner_third
         ? "block"
         : "none";
-
 }
 
 
-/* ========================================
+/* =============================
    REALTIME
-======================================== */
+============================= */
 
 db
   .channel(
@@ -560,6 +602,7 @@ db
     "postgres_changes",
 
     {
+
       event: "UPDATE",
 
       schema: "public",
@@ -569,6 +612,7 @@ db
       filter:
         "game_code=eq."
         + GAME_CODE
+
     },
 
     payload => {
@@ -584,10 +628,6 @@ db
 
   .subscribe();
 
-
-/* ========================================
-   START
-======================================== */
 
 loadGame();
 
