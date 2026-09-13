@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Calzadilla Live Control</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 25px;
+      background: #0b0d10;
+      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h1 {
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      color: #999;
+      margin-bottom: 25px;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 7px 12px;
+      border-radius: 20px;
+      background: #222;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: 1fr 120px 1fr;
+      align-items: center;
+      background: #15181d;
+      border-radius: 14px;
+      padding: 25px;
+      margin-bottom: 20px;
+    }
+
+    .team {
+      text-align: center;
+    }
+
+    .team-name {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .score {
+      font-size: 70px;
+      font-weight: 800;
+    }
+
+    .vs {
+      text-align: center;
+      color: #777;
+      font-size: 18px;
+    }
+
+    .score-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #262a31;
+      color: white;
+    }
+
+    button:hover {
+      background: #353a43;
+    }
+
+    .plus {
+      background: #198754;
+    }
+
+    .minus {
+      background: #b02a37;
+    }
+
+    .panel {
+      background: #15181d;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .panel h2 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    .inning-display {
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .count-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+
+    .count-box {
+      text-align: center;
+      background: #0f1115;
+      border-radius: 10px;
+      padding: 15px;
+    }
+
+    .count-number {
+      font-size: 36px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .bases {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .base {
+      width: 65px;
+      height: 65px;
+      transform: rotate(45deg);
+      border: 3px solid #777;
+      background: #202329;
+      cursor: pointer;
+      margin: 20px;
+    }
+
+    .base.active {
+      background: #ffd43b;
+      border-color: #ffd43b;
+    }
+
+    .base span {
+      display: block;
+      transform: rotate(-45deg);
+      text-align: center;
+      line-height: 60px;
+      color: white;
+      font-weight: bold;
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 12px;
+      }
+
+      .scoreboard {
+        grid-template-columns: 1fr 50px 1fr;
+        padding: 15px 5px;
+      }
+
+      .team-name {
+        font-size: 15px;
+      }
+
+      .score {
+        font-size: 50px;
+      }
+
+      .count-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>Calzadilla Live</h1>
+  <div class="subtitle">Baseball Control Center</div>
+
+  <div id="connectionStatus" class="status">
+    Connecting...
+  </div>
+
+  <!-- SCORE -->
+
+  <div class="scoreboard">
+
+    <div class="team">
+
+      <div id="homeTeam" class="team-name">
+        HOME
+      </div>
+
+      <div id="homeScore" class="score">
+        0
+      </div>
+
+      <div class="score-buttons">
+        <button
+          class="minus"
+          onclick="changeScore('home', -1)">
+          −
+        </button>
+
+        <button
+          class="plus"
+          onclick="changeScore('home', 1)">
+          +1
+        </button>
+      </div>
+
+    </div>
+
+    <div class="vs">
+      VS
+    </div>
+
+    <div class="team">
+
+      <div id="awayTeam" class="team-name">
+        AWAY
+      </div>
+
+      <div id="awayScore" class="score">
+        0
+      </div>
+
+      <div class="score-buttons">
+
+        <button
+          class="minus"
+          onclick="changeScore('away', -1)">
+          −
+        </button>
+
+        <button
+          class="plus"
+          onclick="changeScore('away', 1)">
+          +1
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- INNING -->
+
+  <div class="panel">
+
+    <h2>Inning</h2>
+
+    <div id="inningDisplay" class="inning-display">
+      TOP 1
+    </div>
+
+    <div class="controls">
+
+      <button onclick="changeHalf()">
+        TOP / BOTTOM
+      </button>
+
+      <button onclick="changeInning(-1)">
+        − Inning
+      </button>
+
+      <button onclick="changeInning(1)">
+        + Inning
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- COUNT -->
+
+  <div class="panel">
+
+    <h2>Count</h2>
+
+    <div class="count-grid">
+
+      <div class="count-box">
+
+        BALLS
+
+        <div
+          id="balls"
+          class="count-number">
+          0
+        </div>
+
+        <div class="controls">
+
+          <button onclick="changeCount('balls', -1)">
+            −
+          </button>
+
+          <button onclick="changeCount('balls', 1)">
+            +
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="count-box">
+
+        STRIKES
+
+        <div
+          id="strikes"
+          class="count-number">
+          0
+        </div>
+
+        <div class="controls">
+
+          <button onclick="changeCount('strikes', -1)">
+            −
+          </button>
+
+          <button onclick="changeCount('strikes', 1)">
+            +
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="count-box">
+
+        OUTS
+
+        <div
+          id="outs"
+          class="count-number">
+          0
+        </div>
+
+        <div class="controls">
+
+          <button onclick="changeCount('outs', -1)">
+            −
+          </button>
+
+          <button onclick="changeCount('outs', 1)">
+            +
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- RUNNERS -->
+
+  <div class="panel">
+
+    <h2>Runners</h2>
+
+    <div class="bases">
+
+      <div
+        id="base1"
+        class="base"
+        onclick="toggleBase('runner_first')">
+
+        <span>1B</span>
+
+      </div>
+
+
+      <div
+        id="base2"
+        class="base"
+        onclick="toggleBase('runner_second')">
+
+        <span>2B</span>
+
+      </div>
+
+
+      <div
+        id="base3"
+        class="base"
+        onclick="toggleBase('runner_third')">
+
+        <span>3B</span>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+const SUPABASE_URL =
+  "https://smaqspbeeouzgbwskbnx.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_AoFWsp2Dt_JzdrRm5bF8Tw_zdbOEs1x";
+
+const GAME_CODE = "TEST001";
+
+
+const db =
+  supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+
+let game = null;
+
+
+/* -----------------------------
+   LOAD GAME
+----------------------------- */
+
+async function loadGame() {
+
+  const { data, error } =
+    await db
+      .from("live_games")
+      .select("*")
+      .eq("game_code", GAME_CODE)
+      .single();
+
+
+  if (error) {
+
+    console.error(error);
+
+    document.getElementById(
+      "connectionStatus"
+    ).innerText =
+      "Database error";
+
+    return;
+  }
+
+
+  game = data;
+
+  document.getElementById(
+    "connectionStatus"
+  ).innerText =
+    "● LIVE — Supabase Connected";
+
+
+  render();
+
+}
+
+
+/* -----------------------------
+   UPDATE DATABASE
+----------------------------- */
+
+async function updateGame(values) {
+
+  if (!game) return;
+
+
+  const { data, error } =
+    await db
+      .from("live_games")
+      .update(values)
+      .eq("game_code", GAME_CODE)
+      .select()
+      .single();
+
+
+  if (error) {
+
+    console.error(error);
+
+    alert(
+      "Could not update Supabase"
+    );
+
+    return;
+
+  }
+
+
+  game = data;
+
+  render();
+
+}
+
+
+/* -----------------------------
+   SCORE
+----------------------------- */
+
+function changeScore(team, amount) {
+
+  if (!game) return;
+
+
+  if (team === "home") {
+
+    const score =
+      Math.max(
+        0,
+        game.home_score + amount
+      );
+
+    updateGame({
+      home_score: score
+    });
+
+  }
+
+
+  if (team === "away") {
+
+    const score =
+      Math.max(
+        0,
+        game.away_score + amount
+      );
+
+    updateGame({
+      away_score: score
+    });
+
+  }
+
+}
+
+
+/* -----------------------------
+   BALLS / STRIKES / OUTS
+----------------------------- */
+
+function changeCount(type, amount) {
+
+  if (!game) return;
+
+
+  let max = 3;
+
+  if (type === "balls") {
+    max = 3;
+  }
+
+  if (type === "strikes") {
+    max = 2;
+  }
+
+  if (type === "outs") {
+    max = 2;
+  }
+
+
+  let value =
+    game[type] + amount;
+
+
+  value =
+    Math.max(
+      0,
+      Math.min(
+        max,
+        value
+      )
+    );
+
+
+  const update = {};
+
+  update[type] = value;
+
+  updateGame(update);
+
+}
+
+
+/* -----------------------------
+   INNING
+----------------------------- */
+
+function changeInning(amount) {
+
+  if (!game) return;
+
+
+  const inning =
+    Math.max(
+      1,
+      game.inning + amount
+    );
+
+
+  updateGame({
+    inning: inning
+  });
+
+}
+
+
+function changeHalf() {
+
+  if (!game) return;
+
+
+  const next =
+    game.inning_half === "top"
+      ? "bottom"
+      : "top";
+
+
+  updateGame({
+    inning_half: next
+  });
+
+}
+
+
+/* -----------------------------
+   BASES
+----------------------------- */
+
+function toggleBase(base) {
+
+  if (!game) return;
+
+
+  const update = {};
+
+  update[base] =
+    !game[base];
+
+
+  updateGame(update);
+
+}
+
+
+/* -----------------------------
+   RENDER
+----------------------------- */
+
+function render() {
+
+  if (!game) return;
+
+
+  document.getElementById(
+    "homeTeam"
+  ).innerText =
+    game.home_team;
+
+
+  document.getElementById(
+    "awayTeam"
+  ).innerText =
+    game.away_team;
+
+
+  document.getElementById(
+    "homeScore"
+  ).innerText =
+    game.home_score;
+
+
+  document.getElementById(
+    "awayScore"
+  ).innerText =
+    game.away_score;
+
+
+  document.getElementById(
+    "balls"
+  ).innerText =
+    game.balls;
+
+
+  document.getElementById(
+    "strikes"
+  ).innerText =
+    game.strikes;
+
+
+  document.getElementById(
+    "outs"
+  ).innerText =
+    game.outs;
+
+
+  document.getElementById(
+    "inningDisplay"
+  ).innerText =
+    game.inning_half.toUpperCase()
+    + " "
+    + game.inning;
+
+
+  document
+    .getElementById("base1")
+    .classList
+    .toggle(
+      "active",
+      game.runner_first
+    );
+
+
+  document
+    .getElementById("base2")
+    .classList
+    .toggle(
+      "active",
+      game.runner_second
+    );
+
+
+  document
+    .getElementById("base3")
+    .classList
+    .toggle(
+      "active",
+      game.runner_third
+    );
+
+}
+
+
+/* -----------------------------
+   REALTIME
+----------------------------- */
+
+db
+  .channel("calzadilla-live-game")
+  .on(
+    "postgres_changes",
+    {
+      event: "UPDATE",
+      schema: "public",
+      table: "live_games",
+      filter:
+        "game_code=eq." + GAME_CODE
+    },
+
+    payload => {
+
+      game =
+        payload.new;
+
+      render();
+
+    }
+  )
+  .subscribe();
+
+
+/* START */
+
+loadGame();
+
+</script>
+
+</body>
+</html>
