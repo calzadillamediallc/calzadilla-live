@@ -161,34 +161,96 @@
       outline: 2px solid #168b58;
     }
 
-    .bases {
-      display: flex;
-      justify-content: center;
-      gap: 30px;
-      padding: 25px;
-    }
+    /* DIAMOND */
 
-    .base {
-      width: 55px;
-      height: 55px;
-      border: 2px solid #777;
-      transform: rotate(45deg);
+    .field-wrap {
       display: flex;
       justify-content: center;
       align-items: center;
-      cursor: pointer;
+      padding: 18px 0 8px;
+    }
+
+    .field {
+      position: relative;
+      width: 280px;
+      height: 240px;
+    }
+
+    .field-line {
+      position: absolute;
+      left: 50%;
+      top: 58%;
+      width: 165px;
+      height: 165px;
+      border-left: 2px solid rgba(255,255,255,.12);
+      border-top: 2px solid rgba(255,255,255,.12);
+      transform: translate(-50%, -50%) rotate(45deg);
+      pointer-events: none;
+    }
+
+    .base-node {
+      position: absolute;
+      width: 64px;
+      height: 64px;
       background: #191c21;
+      border: 3px solid #7a7f86;
+      transform: rotate(45deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: .15s ease;
+      user-select: none;
     }
 
-    .base span {
+    .base-node span {
       transform: rotate(-45deg);
-      font-weight: 700;
+      font-weight: 800;
+      font-size: 13px;
     }
 
-    .base.active {
-      background: #e2b128;
-      border-color: #ffd95c;
-      color: #111;
+    .base-node.active {
+      background: #f0c33c;
+      border-color: #ffe27a;
+      color: #101010;
+      box-shadow: 0 0 18px rgba(240,195,60,.35);
+    }
+
+    #baseSecond {
+      left: 108px;
+      top: 5px;
+    }
+
+    #baseThird {
+      left: 28px;
+      top: 92px;
+    }
+
+    #baseFirst {
+      right: 28px;
+      top: 92px;
+    }
+
+    .home-plate {
+      position: absolute;
+      left: 116px;
+      bottom: 5px;
+      width: 48px;
+      height: 38px;
+      background: #f5f5f5;
+      clip-path: polygon(0 0, 100% 0, 84% 65%, 50% 100%, 16% 65%);
+      opacity: .8;
+    }
+
+    .field-center {
+      position: absolute;
+      left: 50%;
+      top: 49%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #7d838b;
+      font-size: 12px;
+      line-height: 1.3;
     }
 
     .notice {
@@ -213,6 +275,10 @@
       }
 
       .score { font-size: 42px; }
+
+      .field {
+        transform: scale(.9);
+      }
     }
   </style>
 </head>
@@ -298,17 +364,38 @@
   <div class="card">
     <strong>Runners</strong>
 
-    <div class="bases">
-      <div id="base1" class="base" onclick="toggleBase('runner_first')">
-        <span>1B</span>
-      </div>
+    <div class="field-wrap">
+      <div class="field">
 
-      <div id="base2" class="base" onclick="toggleBase('runner_second')">
-        <span>2B</span>
-      </div>
+        <div class="field-line"></div>
 
-      <div id="base3" class="base" onclick="toggleBase('runner_third')">
-        <span>3B</span>
+        <div
+          id="baseSecond"
+          class="base-node"
+          onclick="toggleBase('runner_second')">
+          <span>2B</span>
+        </div>
+
+        <div
+          id="baseThird"
+          class="base-node"
+          onclick="toggleBase('runner_third')">
+          <span>3B</span>
+        </div>
+
+        <div
+          id="baseFirst"
+          class="base-node"
+          onclick="toggleBase('runner_first')">
+          <span>1B</span>
+        </div>
+
+        <div class="field-center">
+          BASE<br>RUNNERS
+        </div>
+
+        <div class="home-plate"></div>
+
       </div>
     </div>
   </div>
@@ -425,9 +512,9 @@ function render() {
   inningDisplay.innerText =
     game.inning_half.toUpperCase() + " " + game.inning;
 
-  base1.classList.toggle("active", game.runner_first);
-  base2.classList.toggle("active", game.runner_second);
-  base3.classList.toggle("active", game.runner_third);
+  baseFirst.classList.toggle("active", game.runner_first);
+  baseSecond.classList.toggle("active", game.runner_second);
+  baseThird.classList.toggle("active", game.runner_third);
 
   homePitchCount.innerText = game.home_pitch_count || 0;
   awayPitchCount.innerText = game.away_pitch_count || 0;
@@ -481,18 +568,6 @@ function activePitcherSide() {
   return game.inning_half === "top" ? "home" : "away";
 }
 
-async function addPitch() {
-
-  const side = activePitcherSide();
-  const field = side + "_pitch_count";
-
-  const current = Number(game[field] || 0);
-
-  await updateGame({
-    [field]: current + 1
-  });
-}
-
 async function ball() {
 
   if (!game) return;
@@ -509,18 +584,12 @@ async function ball() {
     changes.balls = 0;
     changes.strikes = 0;
 
-    /*
-      Basic walk logic:
-      Empty 1B -> batter to 1B.
-      If bases are forced, runners advance.
-    */
-
     if (game.runner_first) {
 
       if (game.runner_second) {
 
         if (game.runner_third) {
-          // Bases loaded walk = automatic run.
+
           const battingSide =
             game.inning_half === "top" ? "away" : "home";
 
@@ -771,13 +840,6 @@ async function newPitcher(side) {
     [side + "_pitch_count"]: 0
   });
 }
-
-/*
-  REALTIME
-
-  Any device connected to this game receives
-  the new state automatically.
-*/
 
 db.channel("calzadilla-live-" + GAME_CODE)
   .on(
