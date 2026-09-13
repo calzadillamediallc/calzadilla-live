@@ -909,6 +909,17 @@ let autosaveTimers = {
   home: null
 };
 
+
+let pitchSequence = {
+  away: [],
+  home: []
+};
+
+let plateAppearanceStartPitchCount = {
+  away: null,
+  home: null
+};
+
 function el(id) {
   return document.getElementById(id);
 }
@@ -1223,6 +1234,52 @@ async function logGameEvent({
 
   await loadGameEvents();
   return true;
+}
+
+
+function getPitchSymbol(type) {
+  const map = {
+    BALL: "B",
+    STRIKE: "S",
+    FOUL: "F",
+    STRIKEOUT: "K"
+  };
+
+  return map[type] || type;
+}
+
+function ensurePlateAppearanceStarted(side, beforeSnapshot) {
+  if (
+    plateAppearanceStartPitchCount[side] === null ||
+    plateAppearanceStartPitchCount[side] === undefined
+  ) {
+    const pitcherSide =
+      side === "away"
+        ? "home"
+        : "away";
+
+    plateAppearanceStartPitchCount[side] =
+      Number(
+        beforeSnapshot[
+          pitcherSide + "_pitch_count"
+        ] || 0
+      );
+  }
+}
+
+function recordPitchInSequence(side, type) {
+  pitchSequence[side].push(
+    getPitchSymbol(type)
+  );
+}
+
+function getPitchSequenceText(side) {
+  return pitchSequence[side].join("-");
+}
+
+function resetPlateAppearanceTracking(side) {
+  pitchSequence[side] = [];
+  plateAppearanceStartPitchCount[side] = null;
 }
 
 async function loadGame() {
@@ -2104,6 +2161,17 @@ async function startNewGame() {
     home: null
   };
 
+
+  pitchSequence = {
+    away: [],
+    home: []
+  };
+
+  plateAppearanceStartPitchCount = {
+    away: null,
+    home: null
+  };
+
   clearTimeout(
     autosaveTimers.away
   );
@@ -2549,77 +2617,107 @@ async function ball() {
   const before = snapshotGame();
   const pitchField = activePitchField();
 
+  ensurePlateAppearanceStarted(
+    side,
+    before
+  );
+
   const changes = {
     [pitchField]:
-      Number(game[pitchField] || 0) + 1
+      Number(
+        game[pitchField] || 0
+      ) + 1
   };
 
   if (game.balls >= 3) {
     changes.balls = 0;
     changes.strikes = 0;
 
-    forceBatterToFirst(changes);
+    forceBatterToFirst(
+      changes
+    );
 
-    const success = await updateGame(changes);
+    const success =
+      await updateGame(
+        changes
+      );
+
     if (!success) return;
 
-    const after = snapshotGame();
-    const runs = getRunsBetween(side, before, after);
+    recordPitchInSequence(
+      side,
+      "BALL"
+    );
 
-    /* LOG THE ACTUAL PITCH */
+    const after =
+      snapshotGame();
+
+    const runs =
+      getRunsBetween(
+        side,
+        before,
+        after
+      );
+
+    const sequence =
+      getPitchSequenceText(
+        side
+      );
+
     await logGameEvent({
-      eventType: "BALL",
+      eventType:
+        "WALK",
+
       description:
-        "Ball four to " +
         playerLabel(batter) +
-        ". Count was " +
-        before.balls +
-        "-" +
+        " walked. Pitch sequence: " +
+        sequence +
+        ". Final count: 4-" +
         before.strikes +
         ".",
-      side,
-      batter,
-      before,
-      after,
-      runs: 0,
-      rbi: 0
-    });
 
-    /* LOG THE COMPLETED PLATE APPEARANCE */
-    await logGameEvent({
-      eventType: "WALK",
-      description:
-        playerLabel(batter) +
-        " walked." +
-        (
-          runs
-            ? " " + runs + " run(s) scored on the force."
-            : ""
-        ),
       side,
       batter,
       before,
       after,
       runs,
-      rbi: runs
+      rbi:
+        runs
     });
 
-    await completePlateAppearance(side);
+    resetPlateAppearanceTracking(
+      side
+    );
+
+    await completePlateAppearance(
+      side
+    );
 
   } else {
     changes.balls =
-      Number(game.balls) + 1;
+      Number(
+        game.balls
+      ) + 1;
 
     const success =
-      await updateGame(changes);
+      await updateGame(
+        changes
+      );
 
     if (!success) return;
+
+    recordPitchInSequence(
+      side,
+      "BALL"
+    );
 
     const after =
       snapshotGame();
 
     await logGameEvent({
-      eventType: "BALL",
+      eventType:
+        "BALL",
+
       description:
         "Ball to " +
         playerLabel(batter) +
@@ -2632,15 +2730,19 @@ async function ball() {
         "-" +
         after.strikes +
         ".",
+
       side,
       batter,
       before,
       after,
-      runs: 0,
-      rbi: 0
+      runs:
+        0,
+      rbi:
+        0
     });
   }
 }
+
 
 async function strike() {
   const side = battingSide();
@@ -2648,56 +2750,75 @@ async function strike() {
   const before = snapshotGame();
   const pitchField = activePitchField();
 
+  ensurePlateAppearanceStarted(
+    side,
+    before
+  );
+
   const newPitch =
-    Number(game[pitchField] || 0) + 1;
+    Number(
+      game[pitchField] || 0
+    ) + 1;
 
   if (game.strikes >= 2) {
     const success =
       await processOut({
-        [pitchField]: newPitch
+        [pitchField]:
+          newPitch
       });
 
     if (!success) return;
 
+    recordPitchInSequence(
+      side,
+      "STRIKEOUT"
+    );
+
     const after =
       snapshotGame();
 
-    /* LOG STRIKE THREE AS A PITCH */
+    const sequence =
+      getPitchSequenceText(
+        side
+      );
+
     await logGameEvent({
-      eventType: "STRIKE",
+      eventType:
+        "STRIKEOUT",
+
       description:
-        "Strike three to " +
         playerLabel(batter) +
-        ".",
+        " struck out. Pitch sequence: " +
+        sequence +
+        ". Final count: " +
+        before.balls +
+        "-2.",
+
       side,
       batter,
       before,
       after,
-      runs: 0,
-      rbi: 0
+      runs:
+        0,
+      rbi:
+        0
     });
 
-    /* LOG THE COMPLETED PLATE APPEARANCE */
-    await logGameEvent({
-      eventType: "STRIKEOUT",
-      description:
-        playerLabel(batter) +
-        " struck out.",
-      side,
-      batter,
-      before,
-      after,
-      runs: 0,
-      rbi: 0
-    });
+    resetPlateAppearanceTracking(
+      side
+    );
 
-    await completePlateAppearance(side);
+    await completePlateAppearance(
+      side
+    );
 
   } else {
     const success =
       await updateGame({
         strikes:
-          Number(game.strikes) + 1,
+          Number(
+            game.strikes
+          ) + 1,
 
         [pitchField]:
           newPitch
@@ -2705,11 +2826,18 @@ async function strike() {
 
     if (!success) return;
 
+    recordPitchInSequence(
+      side,
+      "STRIKE"
+    );
+
     const after =
       snapshotGame();
 
     await logGameEvent({
-      eventType: "STRIKE",
+      eventType:
+        "STRIKE",
+
       description:
         "Strike to " +
         playerLabel(batter) +
@@ -2722,15 +2850,19 @@ async function strike() {
         "-" +
         after.strikes +
         ".",
+
       side,
       batter,
       before,
       after,
-      runs: 0,
-      rbi: 0
+      runs:
+        0,
+      rbi:
+        0
     });
   }
 }
+
 
 async function foul() {
   const side = battingSide();
@@ -2738,26 +2870,44 @@ async function foul() {
   const before = snapshotGame();
   const pitchField = activePitchField();
 
+  ensurePlateAppearanceStarted(
+    side,
+    before
+  );
+
   const changes = {
     [pitchField]:
-      Number(game[pitchField] || 0) + 1
+      Number(
+        game[pitchField] || 0
+      ) + 1
   };
 
   if (game.strikes < 2) {
     changes.strikes =
-      Number(game.strikes) + 1;
+      Number(
+        game.strikes
+      ) + 1;
   }
 
   const success =
-    await updateGame(changes);
+    await updateGame(
+      changes
+    );
 
   if (!success) return;
+
+  recordPitchInSequence(
+    side,
+    "FOUL"
+  );
 
   const after =
     snapshotGame();
 
   await logGameEvent({
-    eventType: "FOUL",
+    eventType:
+      "FOUL",
+
     description:
       "Foul ball by " +
       playerLabel(batter) +
@@ -2774,14 +2924,18 @@ async function foul() {
           ? " (count stays at two strikes)."
           : "."
       ),
+
     side,
     batter,
     before,
     after,
-    runs: 0,
-    rbi: 0
+    runs:
+      0,
+    rbi:
+      0
   });
 }
+
 
 async function hitByPitch() {
   const side = battingSide();
@@ -2817,6 +2971,8 @@ async function hitByPitch() {
     runs,
     rbi: runs
   });
+
+  resetPlateAppearanceTracking(side);
 
   await completePlateAppearance(side);
 }
@@ -2926,6 +3082,8 @@ async function singleHit() {
     rbi: runs
   });
 
+  resetPlateAppearanceTracking(side);
+
   await completePlateAppearance(side);
 }
 
@@ -3002,6 +3160,8 @@ async function doubleHit() {
     rbi: runs
   });
 
+  resetPlateAppearanceTracking(side);
+
   await completePlateAppearance(side);
 }
 
@@ -3054,6 +3214,8 @@ async function tripleHit() {
     runs,
     rbi: runs
   });
+
+  resetPlateAppearanceTracking(side);
 
   await completePlateAppearance(side);
 }
@@ -3108,6 +3270,8 @@ async function homeRun() {
     runs,
     rbi: runs
   });
+
+  resetPlateAppearanceTracking(side);
 
   await completePlateAppearance(side);
 }
@@ -3201,6 +3365,8 @@ async function errorPlay() {
     runs,
     rbi: 0
   });
+
+  resetPlateAppearanceTracking(side);
 
   await completePlateAppearance(side);
 }
@@ -3312,6 +3478,8 @@ async function fieldersChoice() {
     rbi: 0
   });
 
+  resetPlateAppearanceTracking(side);
+
   await completePlateAppearance(side);
 }
 
@@ -3367,6 +3535,8 @@ async function sacFly() {
     rbi: runs
   });
 
+  resetPlateAppearanceTracking(side);
+
   await completePlateAppearance(side);
 }
 
@@ -3413,6 +3583,8 @@ async function doublePlay() {
     rbi: 0
   });
 
+  resetPlateAppearanceTracking(side);
+
   await completePlateAppearance(side);
 }
 
@@ -3445,6 +3617,8 @@ async function ballInPlayOut() {
     runs: getRunsBetween(side, before, after),
     rbi: 0
   });
+
+  resetPlateAppearanceTracking(side);
 
   await completePlateAppearance(side);
 }
@@ -3782,13 +3956,11 @@ function renderGameLog(events) {
         ${event.outs_before ?? 0}
         →
         ${event.outs_after ?? 0}
-
         &nbsp; | &nbsp;
-
-        Bases:
-        ${event.runner_first_after ? "1B " : ""}
-        ${event.runner_second_after ? "2B " : ""}
-        ${event.runner_third_after ? "3B" : ""}
+        Bases after:
+        ${(event.runner_first_after || event.runner_second_after || event.runner_third_after)
+          ? `${event.runner_first_after ? "1B " : ""}${event.runner_second_after ? "2B " : ""}${event.runner_third_after ? "3B" : ""}`
+          : "Empty"}
       </div>
       `;
 
