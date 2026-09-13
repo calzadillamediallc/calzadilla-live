@@ -1,293 +1,333 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Calzadilla Live Overlay</title>
+  <title>Calzadilla Live Overlay</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<style>
+  <style>
 
-@font-face {
-  font-family: "Bigail";
-  src: url("Bigail.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-}
+    @font-face {
+      font-family: "Bigail";
+      src: url("Bigail.ttf") format("truetype");
+      font-weight: normal;
+      font-style: normal;
+    }
 
-* {
-  box-sizing: border-box;
-}
+    * {
+      box-sizing: border-box;
+    }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: transparent !important;
-}
+    html,
+    body {
+      margin: 0;
+      padding: 0;
 
-#overlay {
-  position: absolute;
-  left: 20px;
-  top: 20px;
+      width: 100%;
+      height: 100%;
 
-  width: 746px;
-  height: 283px;
+      overflow: hidden;
 
-  font-family: "Bigail", Arial, sans-serif;
-}
+      background: transparent !important;
+    }
 
-#scoreboardArt {
-  position: absolute;
-  inset: 0;
+    #overlay {
+      position: absolute;
 
-  width: 746px;
-  height: 283px;
+      left: 20px;
+      top: 20px;
 
-  pointer-events: none;
-  z-index: 1;
-}
+      width: 746px;
+      height: 283px;
 
+      font-family: "Bigail", Arial, sans-serif;
 
-/* =============================
-   TOP / BOTTOM
-============================= */
+      background: transparent;
+    }
 
-#half {
-  position: absolute;
 
-  left: 322px;
-  top: 76px;
+    /* ========================================
+       BACKGROUND ART
+    ======================================== */
 
-  width: 55px;
-  height: 25px;
+    #scoreboardArt {
+      position: absolute;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+      left: 0;
+      top: 0;
 
-  color: #10266f;
+      width: 746px;
+      height: 283px;
 
-  font-size: 17px;
-  font-weight: normal;
+      pointer-events: none;
 
-  z-index: 10;
-}
+      z-index: 1;
+    }
 
 
-/* =============================
-   INNING
-============================= */
+    /* ========================================
+       TOP / BOT
+    ======================================== */
 
-#inning {
-  position: absolute;
+    #half {
+      position: absolute;
 
-  left: 433px;
-  top: 69px;
+      left: 318px;
+      top: 70px;
 
-  width: 53px;
-  height: 38px;
+      width: 62px;
+      height: 37px;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
 
-  color: white;
+      color: #10266f;
 
-  font-size: 24px;
+      font-size: 22px;
+      line-height: 1;
 
-  z-index: 10;
-}
+      z-index: 10;
+    }
 
 
-/* =============================
-   COUNT
-============================= */
+    /* ========================================
+       INNING
+    ======================================== */
 
-#count {
-  position: absolute;
+    #inning {
+      position: absolute;
 
-  left: 494px;
-  top: 76px;
+      left: 432px;
+      top: 63px;
 
-  width: 55px;
-  height: 25px;
+      width: 56px;
+      height: 47px;
 
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
+      display: flex;
+      justify-content: center;
+      align-items: center;
 
-  color: #10266f;
+      color: white;
 
-  font-size: 17px;
+      font-size: 32px;
+      line-height: 1;
 
-  z-index: 10;
-}
+      z-index: 10;
+    }
 
 
-/* =============================
-   TEAM NAMES
-============================= */
+    /* ========================================
+       COUNT
+       0-0 / 3-2 etc.
+    ======================================== */
 
-.team-name {
-  position: absolute;
+    #count {
+      position: absolute;
 
-  width: 112px;
-  height: 30px;
+      left: 493px;
+      top: 70px;
 
-  display: flex;
-  align-items: center;
+      width: 66px;
+      height: 37px;
 
-  padding-left: 9px;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
 
-  color: white;
+      color: #10266f;
 
-  font-size: 14px;
+      font-size: 22px;
+      line-height: 1;
 
-  text-transform: uppercase;
+      z-index: 10;
+    }
 
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 
-  z-index: 10;
-}
+    /* ========================================
+       TEAM NAMES
+    ======================================== */
 
-#awayName {
-  left: 311px;
-  top: 136px;
-}
+    .team-name {
+      position: absolute;
 
-#homeName {
-  left: 311px;
-  top: 178px;
-}
+      width: 113px;
+      height: 30px;
 
+      display: flex;
+      align-items: center;
 
-/* =============================
-   SCORE DIGITS
+      padding-left: 9px;
 
-   LEFT = tens
-   RIGHT = units
-============================= */
+      color: white;
 
-.score-digit {
-  position: absolute;
+      font-size: 14px;
 
-  width: 32px;
-  height: 30px;
+      line-height: 1;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+      text-transform: uppercase;
 
-  color: white;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
 
-  font-size: 22px;
+      z-index: 10;
+    }
 
-  z-index: 10;
-}
 
+    #awayName {
+      left: 311px;
+      top: 136px;
+    }
 
-/* AWAY */
 
-#awayTens {
-  left: 432px;
-  top: 136px;
-}
+    #homeName {
+      left: 311px;
+      top: 178px;
+    }
 
-#awayOnes {
-  left: 470px;
-  top: 136px;
-}
 
+    /* ========================================
+       SCORE DIGITS
+    ======================================== */
 
-/* HOME */
+    .score-digit {
+      position: absolute;
 
-#homeTens {
-  left: 432px;
-  top: 178px;
-}
+      width: 32px;
+      height: 30px;
 
-#homeOnes {
-  left: 470px;
-  top: 178px;
-}
+      display: flex;
+      justify-content: center;
+      align-items: center;
 
+      color: white;
 
-/* =============================
-   OUTS
-============================= */
+      font-size: 23px;
 
-.out-indicator {
-  position: absolute;
+      line-height: 1;
 
-  width: 15px;
-  height: 15px;
+      z-index: 10;
+    }
 
-  border-radius: 50%;
 
-  background: #ffe600;
+    /* AWAY - TENS */
 
-  display: none;
+    #awayTens {
+      left: 432px;
+      top: 136px;
+    }
 
-  z-index: 15;
-}
 
-#out1 {
-  left: 518px;
-  top: 190px;
-}
+    /* AWAY - ONES */
 
-#out2 {
-  left: 537px;
-  top: 190px;
-}
+    #awayOnes {
+      left: 470px;
+      top: 136px;
+    }
 
 
-/* =============================
-   RUNNERS
-============================= */
+    /* HOME - TENS */
 
-.runner {
-  position: absolute;
+    #homeTens {
+      left: 432px;
+      top: 178px;
+    }
 
-  width: 25px;
-  height: 25px;
 
-  display: none;
+    /* HOME - ONES */
 
-  object-fit: contain;
+    #homeOnes {
+      left: 470px;
+      top: 178px;
+    }
 
-  z-index: 15;
-}
 
-#runnerFirst {
-  left: 685px;
-  top: 128px;
-}
+    /* ========================================
+       OUTS
+    ======================================== */
 
-#runnerSecond {
-  left: 605px;
-  top: 50px;
-}
+    .out-indicator {
+      position: absolute;
 
-#runnerThird {
-  left: 527px;
-  top: 128px;
-}
+      width: 14px;
+      height: 14px;
 
-</style>
+      border-radius: 50%;
+
+      background: #ffe600;
+
+      display: none;
+
+      z-index: 20;
+    }
+
+
+    #out1 {
+      left: 515px;
+      top: 189px;
+    }
+
+
+    #out2 {
+      left: 533px;
+      top: 189px;
+    }
+
+
+    /* ========================================
+       RUNNERS
+    ======================================== */
+
+    .runner {
+      position: absolute;
+
+      width: 25px;
+      height: 25px;
+
+      display: none;
+
+      object-fit: contain;
+
+      z-index: 20;
+    }
+
+
+    /* FIRST */
+
+    #runnerFirst {
+      left: 685px;
+      top: 128px;
+    }
+
+
+    /* SECOND */
+
+    #runnerSecond {
+      left: 605px;
+      top: 50px;
+    }
+
+
+    /* THIRD */
+
+    #runnerThird {
+      left: 527px;
+      top: 128px;
+    }
+
+  </style>
 </head>
+
 
 <body>
 
+
 <div id="overlay">
+
 
   <img
     id="scoreboardArt"
@@ -295,13 +335,22 @@ body {
     alt=""
   >
 
+
+  <!-- TOP / BOT -->
+
   <div id="half">
     TOP
   </div>
 
+
+  <!-- INNING -->
+
   <div id="inning">
     1
   </div>
+
+
+  <!-- COUNT -->
 
   <div id="count">
     0-0
@@ -316,10 +365,12 @@ body {
     AWAY
   </div>
 
+
   <div
     id="awayTens"
     class="score-digit">
   </div>
+
 
   <div
     id="awayOnes"
@@ -336,10 +387,12 @@ body {
     HOME
   </div>
 
+
   <div
     id="homeTens"
     class="score-digit">
   </div>
+
 
   <div
     id="homeOnes"
@@ -355,13 +408,14 @@ body {
     class="out-indicator">
   </div>
 
+
   <div
     id="out2"
     class="out-indicator">
   </div>
 
 
-  <!-- BASES -->
+  <!-- RUNNERS -->
 
   <img
     id="runnerFirst"
@@ -370,12 +424,14 @@ body {
     alt=""
   >
 
+
   <img
     id="runnerSecond"
     class="runner"
     src="BOX BASES.png"
     alt=""
   >
+
 
   <img
     id="runnerThird"
@@ -384,254 +440,382 @@ body {
     alt=""
   >
 
+
 </div>
 
 
 <script>
 
-const SUPABASE_URL =
-  "https://smaqspbeeouzgbwskbnx.supabase.co";
-
-const SUPABASE_KEY =
-  "sb_publishable_AoFWsp2Dt_JzdrRm5bF8Tw_zdbOEs1x";
-
-const GAME_CODE =
-  "TEST001";
-
-const db =
-  window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
-
-let game = null;
+  const SUPABASE_URL =
+    "https://smaqspbeeouzgbwskbnx.supabase.co";
 
 
-/* =============================
-   LOAD GAME
-============================= */
+  const SUPABASE_KEY =
+    "sb_publishable_AoFWsp2Dt_JzdrRm5bF8Tw_zdbOEs1x";
 
-async function loadGame() {
 
-  const { data, error } =
-    await db
-      .from("live_games")
-      .select("*")
-      .eq(
-        "game_code",
-        GAME_CODE
-      )
-      .single();
+  const GAME_CODE =
+    "TEST001";
 
-  if (error) {
 
-    console.error(
-      "Error loading game:",
-      error
+  const db =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
     );
 
-    return;
-  }
 
-  game = data;
-
-  render();
-}
+  let game = null;
 
 
-/* =============================
-   SCORE DIGITS
-============================= */
 
-function renderScore(
-  score,
-  tensId,
-  onesId
-) {
+  /* ========================================
+     LOAD GAME
+  ======================================== */
 
-  const value =
-    Math.max(
-      0,
-      Number(score || 0)
-    );
+  async function loadGame() {
 
-  const tens =
-    Math.floor(value / 10);
-
-  const ones =
-    value % 10;
+    const { data, error } =
+      await db
+        .from("live_games")
+        .select("*")
+        .eq(
+          "game_code",
+          GAME_CODE
+        )
+        .single();
 
 
-  document
-    .getElementById(tensId)
-    .textContent =
-      tens > 0
-        ? tens
-        : "";
+    if (error) {
 
+      console.error(
+        "Error loading game:",
+        error
+      );
 
-  document
-    .getElementById(onesId)
-    .textContent =
-      ones;
-}
-
-
-/* =============================
-   RENDER
-============================= */
-
-function render() {
-
-  if (!game) return;
-
-
-  /* TEAMS */
-
-  document
-    .getElementById("awayName")
-    .textContent =
-      game.away_team || "AWAY";
-
-  document
-    .getElementById("homeName")
-    .textContent =
-      game.home_team || "HOME";
-
-
-  /* SCORES */
-
-  renderScore(
-    game.away_score,
-    "awayTens",
-    "awayOnes"
-  );
-
-  renderScore(
-    game.home_score,
-    "homeTens",
-    "homeOnes"
-  );
-
-
-  /* HALF */
-
-  document
-    .getElementById("half")
-    .textContent =
-      game.inning_half === "bottom"
-        ? "BOT"
-        : "TOP";
-
-
-  /* INNING */
-
-  document
-    .getElementById("inning")
-    .textContent =
-      game.inning ?? 1;
-
-
-  /* COUNT */
-
-  document
-    .getElementById("count")
-    .textContent =
-      (game.balls ?? 0)
-      + "-"
-      + (game.strikes ?? 0);
-
-
-  /* OUTS */
-
-  const outs =
-    Number(game.outs || 0);
-
-  document
-    .getElementById("out1")
-    .style.display =
-      outs >= 1
-        ? "block"
-        : "none";
-
-  document
-    .getElementById("out2")
-    .style.display =
-      outs >= 2
-        ? "block"
-        : "none";
-
-
-  /* BASES */
-
-  document
-    .getElementById("runnerFirst")
-    .style.display =
-      game.runner_first
-        ? "block"
-        : "none";
-
-  document
-    .getElementById("runnerSecond")
-    .style.display =
-      game.runner_second
-        ? "block"
-        : "none";
-
-  document
-    .getElementById("runnerThird")
-    .style.display =
-      game.runner_third
-        ? "block"
-        : "none";
-}
-
-
-/* =============================
-   REALTIME
-============================= */
-
-db
-  .channel(
-    "calzadilla-overlay-"
-    + GAME_CODE
-  )
-
-  .on(
-
-    "postgres_changes",
-
-    {
-
-      event: "UPDATE",
-
-      schema: "public",
-
-      table: "live_games",
-
-      filter:
-        "game_code=eq."
-        + GAME_CODE
-
-    },
-
-    payload => {
-
-      game =
-        payload.new;
-
-      render();
-
+      return;
     }
 
-  )
 
-  .subscribe();
+    game = data;
+
+    render();
+  }
 
 
-loadGame();
+
+  /* ========================================
+     SCORE
+  ======================================== */
+
+  function renderScore(
+    score,
+    tensId,
+    onesId
+  ) {
+
+    const value =
+      Math.max(
+        0,
+        Math.floor(
+          Number(score || 0)
+        )
+      );
+
+
+    const tens =
+      Math.floor(
+        value / 10
+      );
+
+
+    const ones =
+      value % 10;
+
+
+    const tensElement =
+      document.getElementById(
+        tensId
+      );
+
+
+    const onesElement =
+      document.getElementById(
+        onesId
+      );
+
+
+    /*
+      0 - 9:
+
+      [ ] [7]
+
+      10:
+
+      [1] [0]
+
+      25:
+
+      [2] [5]
+    */
+
+
+    if (value < 10) {
+
+      tensElement.textContent =
+        "";
+
+    } else {
+
+      tensElement.textContent =
+        tens;
+    }
+
+
+    onesElement.textContent =
+      ones;
+
+  }
+
+
+
+  /* ========================================
+     RENDER
+  ======================================== */
+
+  function render() {
+
+    if (!game) return;
+
+
+
+    /* TEAMS */
+
+    document
+      .getElementById(
+        "awayName"
+      )
+      .textContent =
+        game.away_team ||
+        "AWAY";
+
+
+    document
+      .getElementById(
+        "homeName"
+      )
+      .textContent =
+        game.home_team ||
+        "HOME";
+
+
+
+    /* SCORE */
+
+    renderScore(
+      game.away_score,
+      "awayTens",
+      "awayOnes"
+    );
+
+
+    renderScore(
+      game.home_score,
+      "homeTens",
+      "homeOnes"
+    );
+
+
+
+    /* TOP / BOT */
+
+    document
+      .getElementById(
+        "half"
+      )
+      .textContent =
+
+        game.inning_half ===
+        "bottom"
+
+          ? "BOT"
+
+          : "TOP";
+
+
+
+    /* INNING */
+
+    document
+      .getElementById(
+        "inning"
+      )
+      .textContent =
+        game.inning ?? 1;
+
+
+
+    /* COUNT */
+
+    document
+      .getElementById(
+        "count"
+      )
+      .textContent =
+
+        (game.balls ?? 0)
+
+        +
+
+        "-"
+
+        +
+
+        (game.strikes ?? 0);
+
+
+
+    /* OUTS */
+
+    const outs =
+      Number(
+        game.outs || 0
+      );
+
+
+    document
+      .getElementById(
+        "out1"
+      )
+      .style.display =
+
+        outs >= 1
+
+          ? "block"
+
+          : "none";
+
+
+    document
+      .getElementById(
+        "out2"
+      )
+      .style.display =
+
+        outs >= 2
+
+          ? "block"
+
+          : "none";
+
+
+
+    /* FIRST */
+
+    document
+      .getElementById(
+        "runnerFirst"
+      )
+      .style.display =
+
+        game.runner_first
+
+          ? "block"
+
+          : "none";
+
+
+
+    /* SECOND */
+
+    document
+      .getElementById(
+        "runnerSecond"
+      )
+      .style.display =
+
+        game.runner_second
+
+          ? "block"
+
+          : "none";
+
+
+
+    /* THIRD */
+
+    document
+      .getElementById(
+        "runnerThird"
+      )
+      .style.display =
+
+        game.runner_third
+
+          ? "block"
+
+          : "none";
+
+  }
+
+
+
+  /* ========================================
+     REALTIME
+  ======================================== */
+
+  db
+    .channel(
+      "calzadilla-overlay-"
+      +
+      GAME_CODE
+    )
+
+    .on(
+
+      "postgres_changes",
+
+      {
+
+        event:
+          "UPDATE",
+
+        schema:
+          "public",
+
+        table:
+          "live_games",
+
+        filter:
+          "game_code=eq."
+          +
+          GAME_CODE
+
+      },
+
+      payload => {
+
+        game =
+          payload.new;
+
+        render();
+
+      }
+
+    )
+
+    .subscribe();
+
+
+
+  /* ========================================
+     START
+  ======================================== */
+
+  loadGame();
 
 </script>
+
 
 </body>
 </html>
