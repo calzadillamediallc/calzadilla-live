@@ -1166,6 +1166,54 @@ async function startNewGame() {
 
   await updateGame({
 
+ async function startNewGame() {
+
+  if (!game) {
+    alert("Game is not loaded yet.");
+    return;
+  }
+
+  const away =
+    document
+      .getElementById("setupAwayTeam")
+      .value
+      .trim();
+
+  const home =
+    document
+      .getElementById("setupHomeTeam")
+      .value
+      .trim();
+
+
+  if (!away || !home) {
+
+    alert(
+      "Enter both Away and Home teams."
+    );
+
+    return;
+  }
+
+
+  const confirmReset =
+    confirm(
+      "START NEW GAME?\n\n" +
+      away +
+      " vs " +
+      home +
+      "\n\n" +
+      "This will reset score, inning, count, outs, bases and pitch counts."
+    );
+
+
+  if (!confirmReset) {
+    return;
+  }
+
+
+  const resetData = {
+
     away_team:
       away.toUpperCase(),
 
@@ -1218,18 +1266,50 @@ async function startNewGame() {
       "",
 
     away_pitch_count:
-      0,
+      0
 
-    current_batter_number:
-      "",
+  };
 
-    current_batter_name:
-      "",
 
-    status:
-      "live"
+  const { data, error } =
+    await db
+      .from("live_games")
+      .update(resetData)
+      .eq(
+        "game_code",
+        GAME_CODE
+      )
+      .select()
+      .single();
 
-  });
+
+  if (error) {
+
+    console.error(
+      "NEW GAME RESET ERROR:",
+      error
+    );
+
+    alert(
+      "Could not reset game:\n" +
+      error.message
+    );
+
+    return;
+  }
+
+
+  game = data;
+
+  render();
+
+
+  alert(
+    "New game ready!\n\n" +
+    away.toUpperCase() +
+    " vs " +
+    home.toUpperCase()
+  );
 
 }
 
