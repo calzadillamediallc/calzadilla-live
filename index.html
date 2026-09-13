@@ -1,609 +1,909 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Calzadilla Live — Baseball Control Center</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-
-*{
-  box-sizing:border-box;
-}
-
-body{
-  margin:0;
-  padding:24px;
-  background:#0b0d10;
-  color:white;
-  font-family:Arial,Helvetica,sans-serif;
-}
-
-.container{
-  max-width:1000px;
-  margin:auto;
-}
-
-h1{
-  margin:0 0 4px;
-}
-
-.subtitle{
-  color:#999;
-  margin-bottom:18px;
-}
-
-.status{
-  display:inline-block;
-  padding:7px 12px;
-  border-radius:20px;
-  background:#222;
-  margin-bottom:18px;
-  font-size:13px;
-}
-
-.card{
-  background:#15181d;
-  border-radius:14px;
-  padding:18px;
-  margin-bottom:16px;
-}
-
-.section-title{
-  font-size:13px;
-  color:#aaa;
-  text-transform:uppercase;
-  letter-spacing:1px;
-  margin-bottom:12px;
-}
-
-.notice{
-  background:#242a31;
-  padding:12px;
-  border-radius:8px;
-  margin-top:12px;
-  font-size:13px;
-  color:#ddd;
-}
-
-input,
-select{
-  width:100%;
-  background:#20242b;
-  border:1px solid #343a44;
-  color:white;
-  padding:11px;
-  border-radius:7px;
-  margin:4px 0;
-  font-size:14px;
-}
-
-button{
-  border:0;
-  border-radius:7px;
-  padding:11px 15px;
-  background:#292e36;
-  color:white;
-  font-weight:700;
-  cursor:pointer;
-  margin:3px;
-  font-size:14px;
-}
-
-button:active{
-  transform:scale(.97);
-}
-
-.green{background:#168b58;}
-.red{background:#bd2e3d;}
-.blue{background:#1769aa;}
-.orange{background:#bd691d;}
-.purple{background:#6f42c1;}
-.yellow{background:#9e7900;}
-.gray{background:#4a515c;}
-
-.center{
-  text-align:center;
-}
-
-
-/* =========================
-   GAME SETUP
-========================= */
-
-.game-setup-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-}
-
-.setup-label{
-  font-size:12px;
-  color:#aaa;
-  margin-bottom:4px;
-}
-
-.setup-actions{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin-top:12px;
-}
-
-
-/* =========================
-   CURRENT BATTER
-========================= */
-
-.current-batter-box{
-  background:#0f1115;
-  border-radius:12px;
-  padding:16px;
-  text-align:center;
-}
-
-.current-batter-team{
-  color:#aaa;
-  font-size:12px;
-  text-transform:uppercase;
-  letter-spacing:1px;
-}
-
-.current-batter-name{
-  font-size:28px;
-  font-weight:800;
-  margin:8px 0;
-}
-
-.ph-badge{
-  display:none;
-  margin:0 auto 8px;
-  width:max-content;
-  padding:5px 9px;
-  border-radius:20px;
-  background:#6f42c1;
-  font-size:11px;
-  font-weight:800;
-}
-
-.next-batter{
-  color:#aaa;
-  font-size:13px;
-  margin-bottom:12px;
-}
-
-.batter-actions{
-  display:flex;
-  justify-content:center;
-  flex-wrap:wrap;
-  gap:8px;
-}
-
-
-/* =========================
-   SCOREBOARD
-========================= */
-
-.scoreboard{
-  display:grid;
-  grid-template-columns:1fr 100px 1fr;
-  align-items:center;
-  text-align:center;
-}
-
-.team-name{
-  font-size:18px;
-  font-weight:700;
-}
-
-.score{
-  font-size:54px;
-  font-weight:800;
-  margin:12px 0;
-}
-
-.vs{
-  color:#777;
-}
-
-
-/* =========================
-   INNING
-========================= */
-
-.inning-display{
-  font-size:25px;
-  font-weight:800;
-  margin:10px;
-}
-
-
-/* =========================
-   PITCH ACTIONS
-========================= */
-
-.pitch-actions{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:8px;
-}
-
-.pitch-actions button{
-  min-height:58px;
-  font-size:16px;
-}
-
-
-/* =========================
-   PLAY ACTIONS
-========================= */
-
-.play-actions{
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:8px;
-  margin-top:12px;
-}
-
-.play-actions button{
-  min-height:58px;
-  font-size:14px;
-}
-
-
-/* =========================
-   COUNT
-========================= */
-
-.count-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
-}
-
-.count-box{
-  background:#0f1115;
-  border-radius:10px;
-  padding:15px;
-  text-align:center;
-}
-
-.count-label{
-  font-size:12px;
-  color:#bbb;
-}
-
-.count-number{
-  font-size:28px;
-  font-weight:800;
-  margin:8px;
-}
-
-
-/* =========================
-   FIELD
-========================= */
-
-.field-wrap{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  padding:4px 0 0;
-}
-
-.field{
-  position:relative;
-  width:190px;
-  height:170px;
-}
-
-.field-line{
-  position:absolute;
-  left:50%;
-  top:48%;
-  width:104px;
-  height:104px;
-  border-left:2px solid rgba(255,255,255,.12);
-  border-top:2px solid rgba(255,255,255,.12);
-  transform:translate(-50%,-50%) rotate(45deg);
-  pointer-events:none;
-}
-
-.base-node{
-  position:absolute;
-  width:48px;
-  height:48px;
-  background:#191c21;
-  border:2px solid #7a7f86;
-  transform:rotate(45deg);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  cursor:pointer;
-  user-select:none;
-}
-
-.base-node span{
-  transform:rotate(-45deg);
-  font-weight:800;
-  font-size:11px;
-}
-
-.base-node.active{
-  background:#f0c33c;
-  border-color:#ffe27a;
-  color:#101010;
-}
-
-#baseSecond{
-  left:71px;
-  top:4px;
-}
-
-#baseThird{
-  left:20px;
-  top:58px;
-}
-
-#baseFirst{
-  right:20px;
-  top:58px;
-}
-
-.home-plate{
-  position:absolute;
-  left:76px;
-  bottom:8px;
-  width:38px;
-  height:30px;
-  background:#e5e5e5;
-
-  clip-path:polygon(
-    0 0,
-    100% 0,
-    84% 65%,
-    50% 100%,
-    16% 65%
-  );
-
-  opacity:.78;
-}
-
-
-/* =========================
-   ROSTERS
-========================= */
-
-.roster-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:14px;
-}
-
-.roster-team{
-  background:#0f1115;
-  border-radius:12px;
-  padding:14px;
-}
-
-.roster-team-title{
-  font-size:17px;
-  font-weight:800;
-  margin-bottom:10px;
-}
-
-.roster-subtitle{
-  margin-top:17px;
-  margin-bottom:7px;
-  font-size:12px;
-  color:#aaa;
-  font-weight:800;
-  text-transform:uppercase;
-  letter-spacing:.8px;
-}
-
-.lineup-counter{
-  margin:8px 0 4px;
-  font-size:12px;
-  color:#aaa;
-}
-
-.roster-header,
-.roster-row{
-  display:grid;
-  grid-template-columns:50px 60px 1fr 75px 74px;
-  gap:6px;
-  align-items:center;
-}
-
-.sub-row{
-  grid-template-columns:60px 1fr 75px 150px;
-}
-
-.used-row{
-  grid-template-columns:60px 1fr 75px;
-}
-
-.roster-header{
-  color:#999;
-  font-size:10px;
-  text-transform:uppercase;
-  padding:0 2px 6px;
-}
-
-.roster-row{
-  margin-bottom:6px;
-}
-
-.roster-row input,
-.roster-row select{
-  margin:0;
-  padding:8px;
-  min-width:0;
-}
-
-.roster-row button{
-  margin:0;
-  padding:8px 6px;
-  font-size:10px;
-}
-
-.sub-actions{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:4px;
-}
-
-.roster-controls{
-  display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-  margin-top:10px;
-}
-
-.used-player{
-  opacity:.55;
-}
-
-
-/* =========================
-   PITCHERS
-========================= */
-
-.pitcher-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-}
-
-.pitcher{
-  background:#0f1115;
-  border-radius:10px;
-  padding:15px;
-}
-
-.pitch-count{
-  font-size:34px;
-  font-weight:800;
-  margin:10px 0;
-}
-
-.active-pitcher{
-  outline:2px solid #168b58;
-}
-
-
-/* =========================
-   MODALS
-========================= */
-
-#decisionModal,
-#choiceModal{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.82);
-  z-index:9999;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-}
-
-.modal-box{
-  width:100%;
-  max-width:500px;
-  background:#171a20;
-  border:1px solid #353b45;
-  border-radius:16px;
-  padding:25px;
-  text-align:center;
-}
-
-.modal-title{
-  font-size:13px;
-  color:#999;
-  text-transform:uppercase;
-  letter-spacing:1px;
-  margin-bottom:12px;
-}
-
-#decisionQuestion,
-#choiceQuestion{
-  font-size:23px;
-  font-weight:800;
-  line-height:1.25;
-  margin-bottom:22px;
-}
-
-.modal-buttons,
-#choiceButtons{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-.modal-buttons button,
-#choiceButtons button{
-  min-height:60px;
-  font-size:16px;
-  margin:0;
-}
-
-
-@media(max-width:750px){
-
-  body{
-    padding:12px;
-  }
-
-  .game-setup-grid,
-  .pitcher-grid,
-  .roster-grid{
-    grid-template-columns:1fr;
-  }
-
-  .scoreboard{
-    grid-template-columns:1fr 50px 1fr;
-  }
-
-  .pitch-actions{
-    grid-template-columns:1fr;
-  }
-
-  .play-actions{
-    grid-template-columns:repeat(2,1fr);
-  }
-
-  .roster-header{
-    display:none;
-  }
-
-  .roster-row{
-    grid-template-columns:50px 60px 1fr 75px;
-  }
-
-  .sub-row{
-    grid-template-columns:60px 1fr 75px;
-  }
-
-  .used-row{
-    grid-template-columns:60px 1fr 75px;
-  }
-
-  .delete-cell,
-  .sub-actions{
-    grid-column:1 / -1;
-  }
-
-  #choiceButtons{
-    grid-template-columns:1fr;
-  }
-}
-
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Calzadilla Live — Baseball Control Center</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+
+      background: #0b0d10;
+      color: #fff;
+
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .container {
+      max-width: 1050px;
+      margin: auto;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+    }
+
+    .subtitle {
+      color: #999;
+      margin-bottom: 18px;
+    }
+
+    .status {
+      display: inline-block;
+
+      padding: 7px 12px;
+
+      border-radius: 20px;
+
+      background: #222;
+
+      margin-bottom: 18px;
+
+      font-size: 13px;
+    }
+
+    .card {
+      background: #15181d;
+
+      border-radius: 14px;
+
+      padding: 18px;
+
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 13px;
+
+      color: #aaa;
+
+      text-transform: uppercase;
+
+      letter-spacing: 1px;
+
+      margin-bottom: 12px;
+    }
+
+    .notice {
+      background: #242a31;
+
+      padding: 12px;
+
+      border-radius: 8px;
+
+      margin-top: 12px;
+
+      font-size: 13px;
+
+      color: #ddd;
+    }
+
+    input,
+    select {
+      width: 100%;
+
+      background: #20242b;
+
+      border: 1px solid #343a44;
+
+      color: white;
+
+      padding: 11px;
+
+      border-radius: 7px;
+
+      margin: 4px 0;
+
+      font-size: 14px;
+    }
+
+    button {
+      border: 0;
+
+      border-radius: 7px;
+
+      padding: 11px 15px;
+
+      background: #292e36;
+
+      color: white;
+
+      font-weight: 700;
+
+      cursor: pointer;
+
+      margin: 3px;
+
+      font-size: 14px;
+    }
+
+    button:active {
+      transform: scale(.97);
+    }
+
+    .green {
+      background: #168b58;
+    }
+
+    .red {
+      background: #bd2e3d;
+    }
+
+    .blue {
+      background: #1769aa;
+    }
+
+    .orange {
+      background: #bd691d;
+    }
+
+    .purple {
+      background: #6f42c1;
+    }
+
+    .yellow {
+      background: #9e7900;
+    }
+
+    .gray {
+      background: #4a515c;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+
+    /* =========================
+       GAME SETUP
+    ========================== */
+
+    .game-setup-grid {
+      display: grid;
+
+      grid-template-columns: 1fr 1fr;
+
+      gap: 12px;
+    }
+
+    .setup-label {
+      font-size: 12px;
+
+      color: #aaa;
+
+      margin-bottom: 4px;
+    }
+
+    .setup-actions {
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 8px;
+
+      margin-top: 12px;
+    }
+
+
+    /* =========================
+       CURRENT BATTER
+    ========================== */
+
+    .current-batter-box {
+      background: #0f1115;
+
+      border-radius: 12px;
+
+      padding: 16px;
+
+      text-align: center;
+    }
+
+    .current-batter-team {
+      color: #aaa;
+
+      font-size: 12px;
+
+      text-transform: uppercase;
+
+      letter-spacing: 1px;
+    }
+
+    .current-batter-name {
+      font-size: 28px;
+
+      font-weight: 800;
+
+      margin: 8px 0;
+    }
+
+    .next-batter {
+      color: #aaa;
+
+      font-size: 13px;
+
+      margin-bottom: 12px;
+    }
+
+    .ph-badge {
+      display: none;
+
+      margin: 7px auto;
+
+      width: max-content;
+
+      padding: 5px 10px;
+
+      border-radius: 20px;
+
+      background: #6f42c1;
+
+      font-size: 11px;
+
+      font-weight: 800;
+    }
+
+    .batter-actions {
+      display: flex;
+
+      justify-content: center;
+
+      flex-wrap: wrap;
+
+      gap: 8px;
+    }
+
+
+    /* =========================
+       SCOREBOARD
+    ========================== */
+
+    .scoreboard {
+      display: grid;
+
+      grid-template-columns: 1fr 100px 1fr;
+
+      align-items: center;
+
+      text-align: center;
+    }
+
+    .team-name {
+      font-size: 18px;
+
+      font-weight: 700;
+    }
+
+    .score {
+      font-size: 54px;
+
+      font-weight: 800;
+
+      margin: 12px 0;
+    }
+
+    .vs {
+      color: #777;
+    }
+
+
+    /* =========================
+       INNING
+    ========================== */
+
+    .inning-display {
+      font-size: 25px;
+
+      font-weight: 800;
+
+      margin: 10px;
+    }
+
+
+    /* =========================
+       PITCH
+    ========================== */
+
+    .pitch-actions {
+      display: grid;
+
+      grid-template-columns: repeat(3, 1fr);
+
+      gap: 8px;
+    }
+
+    .pitch-actions button {
+      min-height: 58px;
+
+      font-size: 16px;
+    }
+
+
+    /* =========================
+       PLAYS
+    ========================== */
+
+    .play-actions {
+      display: grid;
+
+      grid-template-columns: repeat(5, 1fr);
+
+      gap: 8px;
+
+      margin-top: 12px;
+    }
+
+    .play-actions button {
+      min-height: 58px;
+
+      font-size: 14px;
+    }
+
+
+    /* =========================
+       COUNT
+    ========================== */
+
+    .count-grid {
+      display: grid;
+
+      grid-template-columns: repeat(3, 1fr);
+
+      gap: 10px;
+    }
+
+    .count-box {
+      background: #0f1115;
+
+      border-radius: 10px;
+
+      padding: 15px;
+
+      text-align: center;
+    }
+
+    .count-label {
+      font-size: 12px;
+
+      color: #bbb;
+    }
+
+    .count-number {
+      font-size: 28px;
+
+      font-weight: 800;
+
+      margin: 8px;
+    }
+
+
+    /* =========================
+       FIELD
+    ========================== */
+
+    .field-wrap {
+      display: flex;
+
+      justify-content: center;
+
+      align-items: center;
+
+      padding: 4px 0 0;
+    }
+
+    .field {
+      position: relative;
+
+      width: 190px;
+
+      height: 170px;
+    }
+
+    .field-line {
+      position: absolute;
+
+      left: 50%;
+
+      top: 48%;
+
+      width: 104px;
+
+      height: 104px;
+
+      border-left: 2px solid rgba(255,255,255,.12);
+
+      border-top: 2px solid rgba(255,255,255,.12);
+
+      transform:
+        translate(-50%, -50%)
+        rotate(45deg);
+
+      pointer-events: none;
+    }
+
+    .base-node {
+      position: absolute;
+
+      width: 48px;
+
+      height: 48px;
+
+      background: #191c21;
+
+      border: 2px solid #7a7f86;
+
+      transform: rotate(45deg);
+
+      display: flex;
+
+      justify-content: center;
+
+      align-items: center;
+
+      cursor: pointer;
+
+      user-select: none;
+    }
+
+    .base-node span {
+      transform: rotate(-45deg);
+
+      font-weight: 800;
+
+      font-size: 11px;
+    }
+
+    .base-node.active {
+      background: #f0c33c;
+
+      border-color: #ffe27a;
+
+      color: #101010;
+    }
+
+    #baseSecond {
+      left: 71px;
+
+      top: 4px;
+    }
+
+    #baseThird {
+      left: 20px;
+
+      top: 58px;
+    }
+
+    #baseFirst {
+      right: 20px;
+
+      top: 58px;
+    }
+
+    .home-plate {
+      position: absolute;
+
+      left: 76px;
+
+      bottom: 8px;
+
+      width: 38px;
+
+      height: 30px;
+
+      background: #e5e5e5;
+
+      clip-path:
+        polygon(
+          0 0,
+          100% 0,
+          84% 65%,
+          50% 100%,
+          16% 65%
+        );
+
+      opacity: .78;
+    }
+
+
+    /* =========================
+       ROSTER
+    ========================== */
+
+    .roster-grid {
+      display: grid;
+
+      grid-template-columns: 1fr 1fr;
+
+      gap: 14px;
+    }
+
+    .roster-team {
+      background: #0f1115;
+
+      border-radius: 12px;
+
+      padding: 14px;
+    }
+
+    .roster-team-title {
+      font-size: 17px;
+
+      font-weight: 800;
+
+      margin-bottom: 10px;
+    }
+
+    .roster-subtitle {
+      margin-top: 17px;
+
+      margin-bottom: 7px;
+
+      font-size: 12px;
+
+      color: #aaa;
+
+      font-weight: 800;
+
+      text-transform: uppercase;
+
+      letter-spacing: .8px;
+    }
+
+    .lineup-counter {
+      margin: 8px 0 4px;
+
+      font-size: 12px;
+
+      color: #aaa;
+    }
+
+    .roster-header,
+    .roster-row {
+      display: grid;
+
+      grid-template-columns:
+        50px
+        60px
+        1fr
+        75px
+        75px;
+
+      gap: 6px;
+
+      align-items: center;
+    }
+
+    .sub-row {
+      grid-template-columns:
+        60px
+        1fr
+        75px
+        150px;
+    }
+
+    .used-row {
+      grid-template-columns:
+        60px
+        1fr
+        75px;
+    }
+
+    .roster-header {
+      color: #999;
+
+      font-size: 10px;
+
+      text-transform: uppercase;
+
+      padding: 0 2px 6px;
+    }
+
+    .roster-row {
+      margin-bottom: 6px;
+    }
+
+    .roster-row input,
+    .roster-row select {
+      margin: 0;
+
+      padding: 8px;
+
+      min-width: 0;
+    }
+
+    .roster-row button {
+      margin: 0;
+
+      padding: 8px 5px;
+
+      font-size: 10px;
+    }
+
+    .sub-actions {
+      display: grid;
+
+      grid-template-columns: 1fr 1fr;
+
+      gap: 4px;
+    }
+
+    .roster-controls {
+      display: flex;
+
+      gap: 6px;
+
+      flex-wrap: wrap;
+
+      margin-top: 10px;
+    }
+
+    .used-player {
+      opacity: .55;
+    }
+
+
+    /* =========================
+       PITCHERS
+    ========================== */
+
+    .pitcher-grid {
+      display: grid;
+
+      grid-template-columns: 1fr 1fr;
+
+      gap: 12px;
+    }
+
+    .pitcher {
+      background: #0f1115;
+
+      border-radius: 10px;
+
+      padding: 15px;
+    }
+
+    .pitch-count {
+      font-size: 34px;
+
+      font-weight: 800;
+
+      margin: 10px 0;
+    }
+
+    .active-pitcher {
+      outline: 2px solid #168b58;
+    }
+
+
+    /* =========================
+       GAME LOG
+    ========================== */
+
+    .game-log-header {
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      gap: 10px;
+
+      margin-bottom: 12px;
+    }
+
+    .game-log {
+      display: flex;
+
+      flex-direction: column;
+
+      gap: 8px;
+
+      max-height: 620px;
+
+      overflow-y: auto;
+    }
+
+    .game-event {
+      background: #0f1115;
+
+      border-left: 4px solid #1769aa;
+
+      border-radius: 8px;
+
+      padding: 11px 13px;
+    }
+
+    .game-event-main {
+      font-size: 14px;
+
+      font-weight: 800;
+    }
+
+    .game-event-description {
+      margin-top: 5px;
+
+      color: #d3d3d3;
+
+      font-size: 13px;
+    }
+
+    .game-event-meta {
+      margin-top: 6px;
+
+      color: #858b94;
+
+      font-size: 11px;
+    }
+
+    .event-hit {
+      border-left-color: #168b58;
+    }
+
+    .event-out {
+      border-left-color: #bd2e3d;
+    }
+
+    .event-walk {
+      border-left-color: #9e7900;
+    }
+
+    .event-sub {
+      border-left-color: #6f42c1;
+    }
+
+
+    /* =========================
+       MODALS
+    ========================== */
+
+    #decisionModal,
+    #choiceModal {
+      display: none;
+
+      position: fixed;
+
+      inset: 0;
+
+      background: rgba(0,0,0,.82);
+
+      z-index: 9999;
+
+      align-items: center;
+
+      justify-content: center;
+
+      padding: 20px;
+    }
+
+    .modal-box {
+      width: 100%;
+
+      max-width: 500px;
+
+      background: #171a20;
+
+      border: 1px solid #353b45;
+
+      border-radius: 16px;
+
+      padding: 25px;
+
+      text-align: center;
+    }
+
+    .modal-title {
+      font-size: 13px;
+
+      color: #999;
+
+      text-transform: uppercase;
+
+      letter-spacing: 1px;
+
+      margin-bottom: 12px;
+    }
+
+    #decisionQuestion,
+    #choiceQuestion {
+      font-size: 23px;
+
+      font-weight: 800;
+
+      line-height: 1.25;
+
+      margin-bottom: 22px;
+    }
+
+    .modal-buttons,
+    #choiceButtons {
+      display: grid;
+
+      grid-template-columns: 1fr 1fr;
+
+      gap: 10px;
+    }
+
+    .modal-buttons button,
+    #choiceButtons button {
+      min-height: 60px;
+
+      font-size: 16px;
+
+      margin: 0;
+    }
+
+
+    @media(max-width: 750px) {
+
+      body {
+        padding: 12px;
+      }
+
+      .game-setup-grid,
+      .pitcher-grid,
+      .roster-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .scoreboard {
+        grid-template-columns: 1fr 50px 1fr;
+      }
+
+      .pitch-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .play-actions {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .roster-header {
+        display: none;
+      }
+
+      .roster-row {
+        grid-template-columns:
+          50px
+          60px
+          1fr
+          75px;
+      }
+
+      .sub-row {
+        grid-template-columns:
+          60px
+          1fr
+          75px;
+      }
+
+      .used-row {
+        grid-template-columns:
+          60px
+          1fr
+          75px;
+      }
+
+      .sub-actions {
+        grid-column: 1 / -1;
+      }
+
+      #choiceButtons {
+        grid-template-columns: 1fr;
+      }
+
+    }
+
+  </style>
 </head>
 
 
@@ -611,1251 +911,1562 @@ button:active{
 
 <div class="container">
 
-<h1>Calzadilla Live</h1>
 
-<div class="subtitle">
-Baseball Control Center
-</div>
+  <h1>
+    Calzadilla Live
+  </h1>
 
-<div
-id="connectionStatus"
-class="status">
-Connecting...
-</div>
+  <div class="subtitle">
+    Baseball Control Center
+  </div>
 
+  <div
+    id="connectionStatus"
+    class="status">
+    Connecting...
+  </div>
 
-<!-- GAME SETUP -->
 
-<div class="card">
+  <!-- =========================
+       GAME SETUP
+  ========================== -->
 
-<div class="section-title">
-Game Setup
-</div>
+  <div class="card">
 
-<div class="game-setup-grid">
+    <div class="section-title">
+      Game Setup
+    </div>
 
-<div>
+    <div class="game-setup-grid">
 
-<div class="setup-label">
-AWAY TEAM
-</div>
+      <div>
 
-<input
-id="setupAwayTeam"
-type="text"
-placeholder="Away Team">
+        <div class="setup-label">
+          AWAY TEAM
+        </div>
 
-</div>
+        <input
+          id="setupAwayTeam"
+          type="text"
+          placeholder="Away Team">
 
+      </div>
 
-<div>
 
-<div class="setup-label">
-HOME TEAM
-</div>
+      <div>
 
-<input
-id="setupHomeTeam"
-type="text"
-placeholder="Home Team">
+        <div class="setup-label">
+          HOME TEAM
+        </div>
 
-</div>
+        <input
+          id="setupHomeTeam"
+          type="text"
+          placeholder="Home Team">
 
-</div>
+      </div>
 
+    </div>
 
-<div class="setup-actions">
 
-<button
-class="blue"
-onclick="updateTeams()">
-UPDATE TEAMS
-</button>
+    <div class="setup-actions">
 
-<button
-class="purple"
-onclick="startNewGame()">
-START NEW GAME
-</button>
+      <button
+        class="blue"
+        onclick="updateTeams()">
 
-</div>
+        UPDATE TEAMS
 
-</div>
+      </button>
 
 
-<!-- CURRENT BATTER -->
+      <button
+        class="purple"
+        onclick="startNewGame()">
 
-<div class="card">
+        START NEW GAME
 
-<div class="section-title">
-Current Batter
-</div>
+      </button>
 
-<div class="current-batter-box">
+    </div>
 
-<div
-id="currentBatterTeam"
-class="current-batter-team">
-AWAY
-</div>
+  </div>
 
-<div
-id="phBadge"
-class="ph-badge">
-PINCH HITTER
-</div>
 
-<div
-id="currentBatterName"
-class="current-batter-name">
-NO BATTER
-</div>
+  <!-- =========================
+       CURRENT BATTER
+  ========================== -->
 
-<div
-id="nextBatterDisplay"
-class="next-batter">
-NEXT: —
-</div>
+  <div class="card">
 
-<select
-id="currentBatterSelect"
-onchange="selectCurrentBatter()">
-</select>
+    <div class="section-title">
+      Current Batter
+    </div>
 
-<div class="batter-actions">
 
-<button onclick="previousBatter()">
-PREVIOUS
-</button>
+    <div class="current-batter-box">
 
-<button
-class="green"
-onclick="nextBatter()">
-NEXT BATTER
-</button>
 
-</div>
+      <div
+        id="currentBatterTeam"
+        class="current-batter-team">
 
-</div>
+        AWAY
 
-</div>
+      </div>
 
 
-<!-- SCOREBOARD -->
+      <div
+        id="phBadge"
+        class="ph-badge">
 
-<div class="card scoreboard">
+        PINCH HITTER
 
-<div>
+      </div>
 
-<div
-id="homeName"
-class="team-name">
-HOME
-</div>
 
-<div
-id="homeScore"
-class="score">
-0
-</div>
+      <div
+        id="currentBatterName"
+        class="current-batter-name">
 
-<button
-class="red"
-onclick="changeScore('home',-1)">
-−
-</button>
-
-<button
-class="green"
-onclick="changeScore('home',1)">
-+1
-</button>
+        NO BATTER
 
-</div>
+      </div>
 
 
-<div class="vs">
-VS
-</div>
+      <div
+        id="nextBatterDisplay"
+        class="next-batter">
 
+        NEXT: —
 
-<div>
+      </div>
 
-<div
-id="awayName"
-class="team-name">
-AWAY
-</div>
 
-<div
-id="awayScore"
-class="score">
-0
-</div>
+      <select
+        id="currentBatterSelect"
+        onchange="selectCurrentBatter()">
+      </select>
 
-<button
-class="red"
-onclick="changeScore('away',-1)">
-−
-</button>
-
-<button
-class="green"
-onclick="changeScore('away',1)">
-+1
-</button>
 
-</div>
+      <div class="batter-actions">
 
-</div>
+        <button onclick="previousBatter()">
+          PREVIOUS
+        </button>
 
 
-<!-- INNING -->
+        <button
+          class="green"
+          onclick="nextBatter()">
 
-<div class="card center">
+          NEXT BATTER
 
-<strong>
-Inning
-</strong>
+        </button>
 
-<div
-id="inningDisplay"
-class="inning-display">
-TOP 1
-</div>
+      </div>
 
-<button onclick="toggleHalf()">
-TOP / BOTTOM
-</button>
+    </div>
 
-<button onclick="changeInning(-1)">
-− Inning
-</button>
+  </div>
 
-<button onclick="changeInning(1)">
-+ Inning
-</button>
 
-</div>
+  <!-- =========================
+       SCORE
+  ========================== -->
 
+  <div class="card scoreboard">
 
-<!-- PITCH CONTROLS -->
 
-<div class="card">
+    <div>
 
-<strong>
-Pitch Controls
-</strong>
+      <div
+        id="homeName"
+        class="team-name">
 
-<div
-class="pitch-actions"
-style="margin-top:12px;">
+        HOME
 
-<button
-class="green"
-onclick="ball()">
-BALL
-</button>
+      </div>
 
-<button
-class="red"
-onclick="strike()">
-STRIKE
-</button>
 
-<button
-class="orange"
-onclick="foul()">
-FOUL
-</button>
+      <div
+        id="homeScore"
+        class="score">
 
-</div>
+        0
 
+      </div>
 
-<div
-class="center"
-style="margin-top:8px;">
 
-<button onclick="resetCount()">
-RESET COUNT
-</button>
+      <button
+        class="red"
+        onclick="changeScore('home', -1)">
 
-<button
-class="blue"
-onclick="manualOut()">
-+ OUT
-</button>
+        −
 
-</div>
+      </button>
 
-</div>
 
+      <button
+        class="green"
+        onclick="changeScore('home', 1)">
 
-<!-- PLAYS -->
+        +1
 
-<div class="card">
+      </button>
 
-<div class="section-title">
-Ball In Play / Plate Appearance
-</div>
+    </div>
 
-<div class="play-actions">
-
-<button
-class="green"
-onclick="singleHit()">
-SINGLE
-</button>
-
-<button
-class="blue"
-onclick="doubleHit()">
-DOUBLE
-</button>
-
-<button
-class="purple"
-onclick="tripleHit()">
-TRIPLE
-</button>
-
-<button
-class="orange"
-onclick="homeRun()">
-HOME RUN
-</button>
-
-<button
-class="red"
-onclick="ballInPlayOut()">
-OUT
-</button>
-
-<button
-class="yellow"
-onclick="hitByPitch()">
-HBP
-</button>
-
-<button
-class="gray"
-onclick="errorPlay()">
-ERROR
-</button>
-
-<button
-class="blue"
-onclick="fieldersChoice()">
-FIELDER'S CHOICE
-</button>
-
-<button
-class="green"
-onclick="sacFly()">
-SAC FLY
-</button>
-
-<button
-class="red"
-onclick="doublePlay()">
-DOUBLE PLAY
-</button>
 
-</div>
+    <div class="vs">
+      VS
+    </div>
 
-</div>
 
+    <div>
 
-<!-- COUNT -->
+      <div
+        id="awayName"
+        class="team-name">
 
-<div class="card">
+        AWAY
 
-<strong>
-Count
-</strong>
+      </div>
 
-<div
-class="count-grid"
-style="margin-top:12px;">
 
-<div class="count-box">
+      <div
+        id="awayScore"
+        class="score">
 
-<div class="count-label">
-BALLS
-</div>
+        0
 
-<div
-id="balls"
-class="count-number">
-0
-</div>
+      </div>
 
-<button onclick="manualCount('balls',-1)">
-−
-</button>
 
-<button onclick="manualCount('balls',1)">
-+
-</button>
+      <button
+        class="red"
+        onclick="changeScore('away', -1)">
 
-</div>
+        −
 
+      </button>
 
-<div class="count-box">
 
-<div class="count-label">
-STRIKES
-</div>
+      <button
+        class="green"
+        onclick="changeScore('away', 1)">
 
-<div
-id="strikes"
-class="count-number">
-0
-</div>
+        +1
 
-<button onclick="manualCount('strikes',-1)">
-−
-</button>
+      </button>
 
-<button onclick="manualCount('strikes',1)">
-+
-</button>
+    </div>
 
-</div>
 
+  </div>
 
-<div class="count-box">
 
-<div class="count-label">
-OUTS
-</div>
+  <!-- =========================
+       INNING
+  ========================== -->
 
-<div
-id="outs"
-class="count-number">
-0
-</div>
+  <div class="card center">
 
-<button onclick="manualOut(-1)">
-−
-</button>
+    <strong>
+      Inning
+    </strong>
 
-<button onclick="manualOut(1)">
-+
-</button>
+    <div
+      id="inningDisplay"
+      class="inning-display">
 
-</div>
+      TOP 1
 
-</div>
+    </div>
 
-</div>
 
+    <button onclick="toggleHalf()">
+      TOP / BOTTOM
+    </button>
 
-<!-- RUNNERS -->
 
-<div class="card">
+    <button onclick="changeInning(-1)">
+      − Inning
+    </button>
 
-<strong>
-Runners
-</strong>
 
-<div class="field-wrap">
+    <button onclick="changeInning(1)">
+      + Inning
+    </button>
 
-<div class="field">
+  </div>
 
-<div class="field-line"></div>
 
-<div
-id="baseSecond"
-class="base-node"
-onclick="toggleBase('runner_second')">
+  <!-- =========================
+       PITCH
+  ========================== -->
 
-<span>
-2B
-</span>
+  <div class="card">
 
-</div>
+    <strong>
+      Pitch Controls
+    </strong>
 
-<div
-id="baseThird"
-class="base-node"
-onclick="toggleBase('runner_third')">
 
-<span>
-3B
-</span>
+    <div
+      class="pitch-actions"
+      style="margin-top:12px;">
 
-</div>
 
-<div
-id="baseFirst"
-class="base-node"
-onclick="toggleBase('runner_first')">
+      <button
+        class="green"
+        onclick="ball()">
 
-<span>
-1B
-</span>
+        BALL
 
-</div>
+      </button>
 
-<div class="home-plate"></div>
 
-</div>
+      <button
+        class="red"
+        onclick="strike()">
 
-</div>
+        STRIKE
 
-</div>
+      </button>
 
 
-<!-- ROSTERS -->
+      <button
+        class="orange"
+        onclick="foul()">
 
-<div class="card">
+        FOUL
 
-<div class="section-title">
-Roster Manager
-</div>
+      </button>
 
-<div class="notice">
-SUB IN = permanent replacement. PINCH HIT = one plate appearance only, then the original lineup player returns automatically.
-</div>
 
-<div
-class="roster-grid"
-style="margin-top:14px;">
+    </div>
 
 
-<!-- AWAY -->
+    <div
+      class="center"
+      style="margin-top:8px;">
 
-<div class="roster-team">
 
-<div
-id="awayRosterTitle"
-class="roster-team-title">
-AWAY ROSTER
-</div>
+      <button onclick="resetCount()">
+        RESET COUNT
+      </button>
 
-<div
-id="awayLineupCounter"
-class="lineup-counter">
-LINEUP: 0 / 12
-</div>
 
-<div class="roster-subtitle">
-Active Lineup
-</div>
+      <button
+        class="blue"
+        onclick="manualOut()">
 
-<div class="roster-header">
+        + OUT
 
-<div>
-Order
-</div>
+      </button>
 
-<div>
-#
-</div>
 
-<div>
-Name
-</div>
+    </div>
 
-<div>
-Pos
-</div>
+  </div>
 
-<div></div>
 
-</div>
+  <!-- =========================
+       PLATE APPEARANCE
+  ========================== -->
 
-<div id="awayRosterRows"></div>
+  <div class="card">
 
+    <div class="section-title">
+      Ball In Play / Plate Appearance
+    </div>
 
-<div class="roster-controls">
 
-<button
-class="green"
-onclick="addLineupPlayer('away')">
-+ LINEUP PLAYER
-</button>
+    <div class="play-actions">
 
-</div>
 
+      <button
+        class="green"
+        onclick="singleHit()">
 
-<div class="roster-subtitle">
-Substitutes
-</div>
+        SINGLE
 
-<div class="roster-header sub-row">
+      </button>
 
-<div>
-#
-</div>
 
-<div>
-Name
-</div>
+      <button
+        class="blue"
+        onclick="doubleHit()">
 
-<div>
-Pos
-</div>
+        DOUBLE
 
-<div>
-Actions
-</div>
+      </button>
 
-</div>
 
-<div id="awaySubRows"></div>
+      <button
+        class="purple"
+        onclick="tripleHit()">
 
+        TRIPLE
 
-<div class="roster-controls">
+      </button>
 
-<button
-class="gray"
-onclick="addSubstitute('away')">
-+ SUBSTITUTE
-</button>
 
-<button
-class="blue"
-onclick="saveRoster('away')">
-SAVE ROSTER
-</button>
+      <button
+        class="orange"
+        onclick="homeRun()">
 
-</div>
+        HOME RUN
 
+      </button>
 
-<div class="roster-subtitle">
-Used / Out
-</div>
 
-<div id="awayUsedRows"></div>
+      <button
+        class="red"
+        onclick="ballInPlayOut()">
 
-</div>
+        OUT
 
+      </button>
 
-<!-- HOME -->
 
-<div class="roster-team">
+      <button
+        class="yellow"
+        onclick="hitByPitch()">
 
-<div
-id="homeRosterTitle"
-class="roster-team-title">
-HOME ROSTER
-</div>
+        HBP
 
-<div
-id="homeLineupCounter"
-class="lineup-counter">
-LINEUP: 0 / 12
-</div>
+      </button>
 
-<div class="roster-subtitle">
-Active Lineup
-</div>
 
-<div class="roster-header">
+      <button
+        class="gray"
+        onclick="errorPlay()">
 
-<div>
-Order
-</div>
+        ERROR
 
-<div>
-#
-</div>
+      </button>
 
-<div>
-Name
-</div>
 
-<div>
-Pos
-</div>
+      <button
+        class="blue"
+        onclick="fieldersChoice()">
 
-<div></div>
+        FIELDER'S CHOICE
 
-</div>
+      </button>
 
-<div id="homeRosterRows"></div>
 
+      <button
+        class="green"
+        onclick="sacFly()">
 
-<div class="roster-controls">
+        SAC FLY
 
-<button
-class="green"
-onclick="addLineupPlayer('home')">
-+ LINEUP PLAYER
-</button>
+      </button>
 
-</div>
 
+      <button
+        class="red"
+        onclick="doublePlay()">
 
-<div class="roster-subtitle">
-Substitutes
-</div>
+        DOUBLE PLAY
 
-<div class="roster-header sub-row">
+      </button>
 
-<div>
-#
-</div>
 
-<div>
-Name
-</div>
+    </div>
 
-<div>
-Pos
-</div>
+  </div>
 
-<div>
-Actions
-</div>
 
-</div>
+  <!-- =========================
+       COUNT
+  ========================== -->
 
-<div id="homeSubRows"></div>
+  <div class="card">
 
+    <strong>
+      Count
+    </strong>
 
-<div class="roster-controls">
 
-<button
-class="gray"
-onclick="addSubstitute('home')">
-+ SUBSTITUTE
-</button>
+    <div
+      class="count-grid"
+      style="margin-top:12px;">
 
-<button
-class="blue"
-onclick="saveRoster('home')">
-SAVE ROSTER
-</button>
 
-</div>
+      <div class="count-box">
 
+        <div class="count-label">
+          BALLS
+        </div>
 
-<div class="roster-subtitle">
-Used / Out
-</div>
+        <div
+          id="balls"
+          class="count-number">
 
-<div id="homeUsedRows"></div>
+          0
 
-</div>
+        </div>
 
-</div>
+        <button onclick="manualCount('balls', -1)">
+          −
+        </button>
 
-</div>
+        <button onclick="manualCount('balls', 1)">
+          +
+        </button>
 
+      </div>
 
-<!-- PITCHERS -->
 
-<div class="card">
+      <div class="count-box">
 
-<strong>
-Pitchers
-</strong>
+        <div class="count-label">
+          STRIKES
+        </div>
 
-<div class="notice">
-TOP = Home pitcher is active. BOTTOM = Away pitcher is active.
-</div>
+        <div
+          id="strikes"
+          class="count-number">
 
-<div
-class="pitcher-grid"
-style="margin-top:12px;">
+          0
 
-<div
-id="homePitcherBox"
-class="pitcher">
+        </div>
 
-<strong id="homePitcherTeam">
-HOME Pitcher
-</strong>
+        <button onclick="manualCount('strikes', -1)">
+          −
+        </button>
 
-<input
-id="homePitcherNumber"
-placeholder="Jersey #">
+        <button onclick="manualCount('strikes', 1)">
+          +
+        </button>
 
-<input
-id="homePitcherName"
-placeholder="Name (optional)">
+      </div>
 
-<button onclick="savePitcher('home')">
-SAVE PITCHER
-</button>
 
-<div class="count-label">
-PITCH COUNT
-</div>
+      <div class="count-box">
 
-<div
-id="homePitchCount"
-class="pitch-count">
-0
-</div>
+        <div class="count-label">
+          OUTS
+        </div>
 
-<button onclick="adjustPitchCount('home',-1)">
-− Pitch
-</button>
+        <div
+          id="outs"
+          class="count-number">
 
-<button onclick="adjustPitchCount('home',1)">
-+ Pitch
-</button>
+          0
 
-<br>
+        </div>
 
-<button
-class="orange"
-onclick="newPitcher('home')">
-PITCHING CHANGE
-</button>
+        <button onclick="manualOut(-1)">
+          −
+        </button>
 
-</div>
+        <button onclick="manualOut(1)">
+          +
+        </button>
 
+      </div>
 
-<div
-id="awayPitcherBox"
-class="pitcher">
 
-<strong id="awayPitcherTeam">
-AWAY Pitcher
-</strong>
+    </div>
 
-<input
-id="awayPitcherNumber"
-placeholder="Jersey #">
+  </div>
 
-<input
-id="awayPitcherName"
-placeholder="Name (optional)">
 
-<button onclick="savePitcher('away')">
-SAVE PITCHER
-</button>
+  <!-- =========================
+       RUNNERS
+  ========================== -->
 
-<div class="count-label">
-PITCH COUNT
-</div>
+  <div class="card">
 
-<div
-id="awayPitchCount"
-class="pitch-count">
-0
-</div>
+    <strong>
+      Runners
+    </strong>
 
-<button onclick="adjustPitchCount('away',-1)">
-− Pitch
-</button>
 
-<button onclick="adjustPitchCount('away',1)">
-+ Pitch
-</button>
+    <div class="field-wrap">
 
-<br>
+      <div class="field">
 
-<button
-class="orange"
-onclick="newPitcher('away')">
-PITCHING CHANGE
-</button>
 
-</div>
+        <div class="field-line"></div>
 
-</div>
 
-</div>
+        <div
+          id="baseSecond"
+          class="base-node"
+          onclick="toggleBase('runner_second')">
+
+          <span>
+            2B
+          </span>
+
+        </div>
+
+
+        <div
+          id="baseThird"
+          class="base-node"
+          onclick="toggleBase('runner_third')">
+
+          <span>
+            3B
+          </span>
+
+        </div>
+
+
+        <div
+          id="baseFirst"
+          class="base-node"
+          onclick="toggleBase('runner_first')">
+
+          <span>
+            1B
+          </span>
+
+        </div>
+
+
+        <div class="home-plate"></div>
+
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       ROSTERS
+  ========================== -->
+
+  <div class="card">
+
+    <div class="section-title">
+      Roster Manager
+    </div>
+
+
+    <div class="notice">
+
+      Active lineup maximum: 12 hitters.
+      SUB IN is permanent.
+      PINCH HIT is one plate appearance only.
+
+    </div>
+
+
+    <div
+      class="roster-grid"
+      style="margin-top:14px;">
+
+
+      <!-- AWAY -->
+
+      <div class="roster-team">
+
+
+        <div
+          id="awayRosterTitle"
+          class="roster-team-title">
+
+          AWAY ROSTER
+
+        </div>
+
+
+        <div
+          id="awayLineupCounter"
+          class="lineup-counter">
+
+          LINEUP: 0 / 12
+
+        </div>
+
+
+        <div class="roster-subtitle">
+          Active Lineup
+        </div>
+
+
+        <div class="roster-header">
+
+          <div>Order</div>
+
+          <div>#</div>
+
+          <div>Name</div>
+
+          <div>Pos</div>
+
+          <div></div>
+
+        </div>
+
+
+        <div id="awayRosterRows"></div>
+
+
+        <div class="roster-controls">
+
+          <button
+            class="green"
+            onclick="addLineupPlayer('away')">
+
+            + LINEUP PLAYER
+
+          </button>
+
+        </div>
+
+
+        <div class="roster-subtitle">
+          Substitutes
+        </div>
+
+
+        <div class="roster-header sub-row">
+
+          <div>#</div>
+
+          <div>Name</div>
+
+          <div>Pos</div>
+
+          <div>Actions</div>
+
+        </div>
+
+
+        <div id="awaySubRows"></div>
+
+
+        <div class="roster-controls">
+
+          <button
+            class="gray"
+            onclick="addSubstitute('away')">
+
+            + SUBSTITUTE
+
+          </button>
+
+
+          <button
+            class="blue"
+            onclick="saveRoster('away')">
+
+            SAVE ROSTER
+
+          </button>
+
+        </div>
+
+
+        <div class="roster-subtitle">
+          Used / Out
+        </div>
+
+
+        <div id="awayUsedRows"></div>
+
+
+      </div>
+
+
+      <!-- HOME -->
+
+      <div class="roster-team">
+
+
+        <div
+          id="homeRosterTitle"
+          class="roster-team-title">
+
+          HOME ROSTER
+
+        </div>
+
+
+        <div
+          id="homeLineupCounter"
+          class="lineup-counter">
+
+          LINEUP: 0 / 12
+
+        </div>
+
+
+        <div class="roster-subtitle">
+          Active Lineup
+        </div>
+
+
+        <div class="roster-header">
+
+          <div>Order</div>
+
+          <div>#</div>
+
+          <div>Name</div>
+
+          <div>Pos</div>
+
+          <div></div>
+
+        </div>
+
+
+        <div id="homeRosterRows"></div>
+
+
+        <div class="roster-controls">
+
+          <button
+            class="green"
+            onclick="addLineupPlayer('home')">
+
+            + LINEUP PLAYER
+
+          </button>
+
+        </div>
+
+
+        <div class="roster-subtitle">
+          Substitutes
+        </div>
+
+
+        <div class="roster-header sub-row">
+
+          <div>#</div>
+
+          <div>Name</div>
+
+          <div>Pos</div>
+
+          <div>Actions</div>
+
+        </div>
+
+
+        <div id="homeSubRows"></div>
+
+
+        <div class="roster-controls">
+
+          <button
+            class="gray"
+            onclick="addSubstitute('home')">
+
+            + SUBSTITUTE
+
+          </button>
+
+
+          <button
+            class="blue"
+            onclick="saveRoster('home')">
+
+            SAVE ROSTER
+
+          </button>
+
+        </div>
+
+
+        <div class="roster-subtitle">
+          Used / Out
+        </div>
+
+
+        <div id="homeUsedRows"></div>
+
+
+      </div>
+
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       PITCHERS
+  ========================== -->
+
+  <div class="card">
+
+    <strong>
+      Pitchers
+    </strong>
+
+
+    <div class="notice">
+
+      TOP = Home pitcher is active.
+      BOTTOM = Away pitcher is active.
+
+    </div>
+
+
+    <div
+      class="pitcher-grid"
+      style="margin-top:12px;">
+
+
+      <div
+        id="homePitcherBox"
+        class="pitcher">
+
+
+        <strong id="homePitcherTeam">
+          HOME Pitcher
+        </strong>
+
+
+        <input
+          id="homePitcherNumber"
+          placeholder="Jersey #">
+
+
+        <input
+          id="homePitcherName"
+          placeholder="Name">
+
+
+        <button onclick="savePitcher('home')">
+
+          SAVE PITCHER
+
+        </button>
+
+
+        <div class="count-label">
+
+          PITCH COUNT
+
+        </div>
+
+
+        <div
+          id="homePitchCount"
+          class="pitch-count">
+
+          0
+
+        </div>
+
+
+        <button onclick="adjustPitchCount('home', -1)">
+          − Pitch
+        </button>
+
+
+        <button onclick="adjustPitchCount('home', 1)">
+          + Pitch
+        </button>
+
+
+        <br>
+
+
+        <button
+          class="orange"
+          onclick="newPitcher('home')">
+
+          PITCHING CHANGE
+
+        </button>
+
+
+      </div>
+
+
+      <div
+        id="awayPitcherBox"
+        class="pitcher">
+
+
+        <strong id="awayPitcherTeam">
+          AWAY Pitcher
+        </strong>
+
+
+        <input
+          id="awayPitcherNumber"
+          placeholder="Jersey #">
+
+
+        <input
+          id="awayPitcherName"
+          placeholder="Name">
+
+
+        <button onclick="savePitcher('away')">
+
+          SAVE PITCHER
+
+        </button>
+
+
+        <div class="count-label">
+
+          PITCH COUNT
+
+        </div>
+
+
+        <div
+          id="awayPitchCount"
+          class="pitch-count">
+
+          0
+
+        </div>
+
+
+        <button onclick="adjustPitchCount('away', -1)">
+          − Pitch
+        </button>
+
+
+        <button onclick="adjustPitchCount('away', 1)">
+          + Pitch
+        </button>
+
+
+        <br>
+
+
+        <button
+          class="orange"
+          onclick="newPitcher('away')">
+
+          PITCHING CHANGE
+
+        </button>
+
+
+      </div>
+
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       GAME LOG
+  ========================== -->
+
+  <div class="card">
+
+    <div class="game-log-header">
+
+      <div>
+
+        <div class="section-title">
+          Game Log
+        </div>
+
+        <strong>
+          Live Play-by-Play
+        </strong>
+
+      </div>
+
+
+      <button
+        class="blue"
+        onclick="loadGameEvents()">
+
+        REFRESH
+
+      </button>
+
+    </div>
+
+
+    <div id="gameLog" class="game-log">
+
+      <div class="notice">
+        No events yet.
+      </div>
+
+    </div>
+
+  </div>
+
 
 </div>
 
 
-<!-- YES / NO -->
+<!-- =========================
+     YES / NO
+========================== -->
 
 <div id="decisionModal">
 
-<div class="modal-box">
+  <div class="modal-box">
 
-<div class="modal-title">
-Decision
+
+    <div class="modal-title">
+      Decision
+    </div>
+
+
+    <div id="decisionQuestion">
+      Question
+    </div>
+
+
+    <div class="modal-buttons">
+
+
+      <button
+        class="green"
+        onclick="resolveDecision(true)">
+
+        YES
+
+      </button>
+
+
+      <button
+        class="red"
+        onclick="resolveDecision(false)">
+
+        NO
+
+      </button>
+
+
+    </div>
+
+
+  </div>
+
 </div>
 
-<div id="decisionQuestion">
-Question
-</div>
 
-<div class="modal-buttons">
-
-<button
-class="green"
-onclick="resolveDecision(true)">
-YES
-</button>
-
-<button
-class="red"
-onclick="resolveDecision(false)">
-NO
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-
-<!-- MULTIPLE CHOICE -->
+<!-- =========================
+     CHOICE
+========================== -->
 
 <div id="choiceModal">
 
-<div class="modal-box">
+  <div class="modal-box">
 
-<div class="modal-title">
-Select Option
-</div>
 
-<div id="choiceQuestion">
-Choose
-</div>
+    <div class="modal-title">
+      Select Option
+    </div>
 
-<div id="choiceButtons"></div>
 
-</div>
+    <div id="choiceQuestion">
+      Choose
+    </div>
+
+
+    <div id="choiceButtons"></div>
+
+
+  </div>
 
 </div>
 
 
 <script>
 
+
+/* =========================================================
+   CONFIG
+========================================================= */
+
 const SUPABASE_URL =
-"https://smaqspbeeouzgbwskbnx.supabase.co";
+  "https://smaqspbeeouzgbwskbnx.supabase.co";
+
 
 const SUPABASE_KEY =
-"sb_publishable_AoFWsp2Dt_JzdrRm5bF8Tw_zdbOEs1x";
+  "sb_publishable_AoFWsp2Dt_JzdrRm5bF8Tw_zdbOEs1x";
+
 
 const GAME_CODE =
-"TEST001";
+  "TEST001";
+
 
 const MAX_LINEUP =
-12;
+  12;
 
 
 const POSITION_LIMITS = {
 
-  P:1,
-  C:1,
-  "1B":1,
-  "2B":1,
-  "3B":1,
-  SS:1,
-  LF:1,
-  CF:1,
-  RF:1,
-  DH:1,
-  EH:2
+  P: 1,
+
+  C: 1,
+
+  "1B": 1,
+
+  "2B": 1,
+
+  "3B": 1,
+
+  SS: 1,
+
+  LF: 1,
+
+  CF: 1,
+
+  RF: 1,
+
+  DH: 1,
+
+  EH: 2
 };
 
 
 const POSITION_OPTIONS = [
 
   "P",
+
   "C",
+
   "1B",
+
   "2B",
+
   "3B",
+
   "SS",
+
   "LF",
+
   "CF",
+
   "RF",
+
   "DH",
+
   "EH"
 ];
 
 
 const db =
-window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
 
 
 let game =
-null;
+  null;
 
 
 let rosters = {
 
-  away:[],
-  home:[]
+  away: [],
+
+  home: []
 };
 
 
 let currentBatterIndex = {
 
-  away:0,
-  home:0
+  away: 0,
+
+  home: 0
 };
 
 
-/*
-  Temporary PH state.
-
-  PH does NOT replace the
-  original player in the DB lineup.
-*/
-
 let pinchHitContext = {
 
-  away:null,
-  home:null
+  away: null,
+
+  home: null
 };
 
 
 let decisionResolver =
-null;
+  null;
 
 
 let choiceResolver =
-null;
+  null;
 
 
-/* =========================
+/* =========================================================
    MODALS
-========================= */
+========================================================= */
 
 function askYesNo(
   question
-){
+) {
 
   return new Promise(
     resolve => {
 
       decisionResolver =
-      resolve;
+        resolve;
 
 
       document
-      .getElementById(
-        "decisionQuestion"
-      )
-      .textContent =
-      question;
+        .getElementById(
+          "decisionQuestion"
+        )
+        .textContent =
+          question;
 
 
       document
-      .getElementById(
-        "decisionModal"
-      )
-      .style.display =
-      "flex";
+        .getElementById(
+          "decisionModal"
+        )
+        .style.display =
+          "flex";
+
     }
   );
+
 }
 
 
 function resolveDecision(
   value
-){
+) {
 
   document
-  .getElementById(
-    "decisionModal"
-  )
-  .style.display =
-  "none";
+    .getElementById(
+      "decisionModal"
+    )
+    .style.display =
+      "none";
 
 
-  if(
+  if (
     decisionResolver
-  ){
+  ) {
 
     const resolver =
-    decisionResolver;
+      decisionResolver;
 
 
     decisionResolver =
-    null;
+      null;
 
 
     resolver(
       value
     );
+
   }
+
 }
 
 
 function askChoice(
   question,
   options
-){
+) {
 
   return new Promise(
     resolve => {
 
       choiceResolver =
-      resolve;
+        resolve;
 
 
       document
-      .getElementById(
-        "choiceQuestion"
-      )
-      .textContent =
-      question;
+        .getElementById(
+          "choiceQuestion"
+        )
+        .textContent =
+          question;
 
 
       const container =
-      document.getElementById(
-        "choiceButtons"
-      );
+        document.getElementById(
+          "choiceButtons"
+        );
 
 
       container.innerHTML =
-      "";
+        "";
 
 
       options.forEach(
         option => {
 
           const button =
-          document.createElement(
-            "button"
-          );
+            document.createElement(
+              "button"
+            );
 
 
           button.textContent =
-          option.label;
+            option.label;
 
 
           button.className =
-          option.className ||
-          "blue";
+            option.className ||
+            "blue";
 
 
           button.onclick =
-          () => {
+            () => {
 
-            document
-            .getElementById(
-              "choiceModal"
-            )
-            .style.display =
-            "none";
-
-
-            const resolver =
-            choiceResolver;
+              document
+                .getElementById(
+                  "choiceModal"
+                )
+                .style.display =
+                  "none";
 
 
-            choiceResolver =
-            null;
+              const resolver =
+                choiceResolver;
 
 
-            resolver(
-              option.value
-            );
-          };
+              choiceResolver =
+                null;
+
+
+              resolver(
+                option.value
+              );
+
+            };
 
 
           container.appendChild(
             button
           );
+
         }
       );
 
 
       document
-      .getElementById(
-        "choiceModal"
-      )
-      .style.display =
-      "flex";
+        .getElementById(
+          "choiceModal"
+        )
+        .style.display =
+          "flex";
+
     }
   );
+
 }
 
 
-/* =========================
+/* =========================================================
    BASIC HELPERS
-========================= */
+========================================================= */
 
-function battingSide(){
+function battingSide() {
 
   return game.inning_half ===
-  "top"
+    "top"
 
-  ? "away"
-  : "home";
+    ? "away"
+
+    : "home";
+
 }
 
 
-function activePitcherSide(){
+function activePitcherSide() {
 
   return game.inning_half ===
-  "top"
+    "top"
 
-  ? "home"
-  : "away";
+    ? "home"
+
+    : "away";
+
 }
 
 
-function activePitchField(){
+function activePitchField() {
 
   return activePitcherSide() +
-  "_pitch_count";
+    "_pitch_count";
+
 }
 
 
-function battingScoreField(){
+function battingScoreField() {
 
   return battingSide() +
-  "_score";
+    "_score";
+
 }
 
 
 function playerLabel(
   player
-){
+) {
+
+  if (
+    !player
+  ) {
+
+    return "UNKNOWN";
+
+  }
+
 
   const number =
-  player.jersey_number
-
-  ? "#" +
     player.jersey_number
 
-  : "";
+      ? "#" +
+        player.jersey_number
+
+      : "";
 
 
   const name =
-  player.player_name ||
-  "UNKNOWN";
+    player.player_name ||
+    "UNKNOWN";
 
 
   return (
     number +
     (
       number
-      ? " "
-      : ""
+        ? " "
+        : ""
     ) +
     name
   );
+
 }
 
 
-function makeTempId(){
+function makeTempId() {
 
   return (
     "temp_" +
     Date.now() +
     "_" +
     Math.random()
-    .toString(36)
-    .slice(2)
+      .toString(36)
+      .slice(2)
   );
+
 }
 
 
 function isTempPlayer(
   player
-){
+) {
 
   return String(
     player.id
@@ -1863,39 +2474,38 @@ function isTempPlayer(
   .startsWith(
     "temp_"
   );
+
 }
 
 
 function playerStatus(
   player
-){
+) {
 
-  /*
-    Backward compatibility
-    with old rows.
-  */
-
-  if(
+  if (
     player.roster_status
-  ){
+  ) {
 
     return player.roster_status;
+
   }
 
 
   return (
     player.batting_order ===
-    null
+      null
 
-    ? "sub"
-    : "active"
+      ? "sub"
+
+      : "active"
   );
+
 }
 
 
 function getLineup(
   side
-){
+) {
 
   return rosters[
     side
@@ -1923,12 +2533,13 @@ function getLineup(
         b.batting_order
       )
   );
+
 }
 
 
 function getSubs(
   side
-){
+) {
 
   return rosters[
     side
@@ -1940,12 +2551,13 @@ function getSubs(
       ) ===
       "sub"
   );
+
 }
 
 
 function getUsed(
   side
-){
+) {
 
   return rosters[
     side
@@ -1957,31 +2569,729 @@ function getUsed(
       ) ===
       "used"
   );
+
 }
 
 
-/* =========================
-   POSITION LOGIC
-========================= */
+/* =========================================================
+   SNAPSHOT
+========================================================= */
+
+function snapshotGame() {
+
+  return {
+
+    inning:
+      Number(
+        game.inning
+      ),
+
+
+    inning_half:
+      game.inning_half,
+
+
+    balls:
+      Number(
+        game.balls ||
+        0
+      ),
+
+
+    strikes:
+      Number(
+        game.strikes ||
+        0
+      ),
+
+
+    outs:
+      Number(
+        game.outs ||
+        0
+      ),
+
+
+    runner_first:
+      Boolean(
+        game.runner_first
+      ),
+
+
+    runner_second:
+      Boolean(
+        game.runner_second
+      ),
+
+
+    runner_third:
+      Boolean(
+        game.runner_third
+      ),
+
+
+    away_score:
+      Number(
+        game.away_score ||
+        0
+      ),
+
+
+    home_score:
+      Number(
+        game.home_score ||
+        0
+      )
+
+  };
+
+}
+
+
+/* =========================================================
+   GAME LOG
+========================================================= */
+
+function getPitcherInfo(
+  side
+) {
+
+  const pitcherSide =
+    side === "away"
+
+      ? "home"
+
+      : "away";
+
+
+  return {
+
+    number:
+      game[
+        pitcherSide +
+        "_pitcher_number"
+      ] ||
+      "",
+
+
+    name:
+      game[
+        pitcherSide +
+        "_pitcher_name"
+      ] ||
+      "",
+
+
+    count:
+      Number(
+        game[
+          pitcherSide +
+          "_pitch_count"
+        ] ||
+        0
+      )
+
+  };
+
+}
+
+
+async function logGameEvent({
+
+  eventType,
+
+  description = "",
+
+  runs = 0,
+
+  rbi = 0,
+
+  batter = null,
+
+  side = null,
+
+  before = null,
+
+  after = null
+
+}) {
+
+  if (
+    !before
+  ) {
+
+    return;
+
+  }
+
+
+  if (
+    !after
+  ) {
+
+    after =
+      snapshotGame();
+
+  }
+
+
+  side =
+    side ||
+    (
+      before.inning_half ===
+      "top"
+
+        ? "away"
+
+        : "home"
+    );
+
+
+  if (
+    !batter
+  ) {
+
+    batter =
+      getCurrentBatterForSide(
+        side
+      );
+
+  }
+
+
+  const pitcher =
+    getPitcherInfo(
+      side
+    );
+
+
+  const ph =
+    pinchHitContext[
+      side
+    ];
+
+
+  const batterPosition =
+    batter?.position ||
+    "";
+
+
+  const pitcherText =
+
+    pitcher.number ||
+    pitcher.name
+
+      ? " | Pitcher: " +
+        (
+          pitcher.number
+            ? "#" +
+              pitcher.number +
+              " "
+            : ""
+        ) +
+        (
+          pitcher.name ||
+          ""
+        ) +
+        " | Pitch #" +
+        pitcher.count
+
+      : "";
+
+
+  const countText =
+    " | Count: " +
+    before.balls +
+    "-" +
+    before.strikes;
+
+
+  const positionText =
+    batterPosition
+
+      ? " | " +
+        batterPosition
+
+      : "";
+
+
+  const phText =
+    ph
+
+      ? " | PH for " +
+        playerLabel(
+          ph.original
+        )
+
+      : "";
+
+
+  const fullDescription =
+    description +
+    positionText +
+    countText +
+    pitcherText +
+    phText;
+
+
+  let batterId =
+    null;
+
+
+  if (
+    batter &&
+    Number.isFinite(
+      Number(
+        batter.id
+      )
+    )
+  ) {
+
+    batterId =
+      Number(
+        batter.id
+      );
+
+  }
+
+
+  const {
+    error
+  } =
+    await db
+      .from(
+        "game_events"
+      )
+      .insert({
+
+        game_code:
+          GAME_CODE,
+
+
+        inning:
+          before.inning,
+
+
+        inning_half:
+          before.inning_half,
+
+
+        batting_team:
+          side === "away"
+
+            ? game.away_team
+
+            : game.home_team,
+
+
+        batter_id:
+          batterId,
+
+
+        batter_number:
+          batter?.jersey_number ||
+          "",
+
+
+        batter_name:
+          batter?.player_name ||
+          "",
+
+
+        event_type:
+          eventType,
+
+
+        event_description:
+          fullDescription,
+
+
+        outs_before:
+          before.outs,
+
+
+        outs_after:
+          after.outs,
+
+
+        runner_first_before:
+          before.runner_first,
+
+
+        runner_second_before:
+          before.runner_second,
+
+
+        runner_third_before:
+          before.runner_third,
+
+
+        runner_first_after:
+          after.runner_first,
+
+
+        runner_second_after:
+          after.runner_second,
+
+
+        runner_third_after:
+          after.runner_third,
+
+
+        runs_scored:
+          runs,
+
+
+        rbi:
+          rbi,
+
+
+        away_score_before:
+          before.away_score,
+
+
+        home_score_before:
+          before.home_score,
+
+
+        away_score_after:
+          after.away_score,
+
+
+        home_score_after:
+          after.home_score
+
+      });
+
+
+  if (
+    error
+  ) {
+
+    console.error(
+      "GAME LOG ERROR:",
+      error
+    );
+
+
+    alert(
+      "Game Log error:\n" +
+      error.message
+    );
+
+
+    return false;
+
+  }
+
+
+  await loadGameEvents();
+
+
+  return true;
+
+}
+
+
+async function loadGameEvents() {
+
+  const {
+    data,
+    error
+  } =
+    await db
+      .from(
+        "game_events"
+      )
+      .select("*")
+      .eq(
+        "game_code",
+        GAME_CODE
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      )
+      .limit(
+        100
+      );
+
+
+  if (
+    error
+  ) {
+
+    console.error(
+      "LOAD GAME EVENTS ERROR:",
+      error
+    );
+
+
+    return;
+
+  }
+
+
+  renderGameLog(
+    data ||
+    []
+  );
+
+}
+
+
+function renderGameLog(
+  events
+) {
+
+  const container =
+    document.getElementById(
+      "gameLog"
+    );
+
+
+  container.innerHTML =
+    "";
+
+
+  if (
+    !events.length
+  ) {
+
+    container.innerHTML = `
+
+      <div class="notice">
+        No events yet.
+      </div>
+
+    `;
+
+
+    return;
+
+  }
+
+
+  events.forEach(
+    event => {
+
+      const row =
+        document.createElement(
+          "div"
+        );
+
+
+      let eventClass =
+        "";
+
+
+      if (
+        [
+          "SINGLE",
+          "DOUBLE",
+          "TRIPLE",
+          "HOME_RUN"
+        ]
+        .includes(
+          event.event_type
+        )
+      ) {
+
+        eventClass =
+          "event-hit";
+
+      }
+
+
+      if (
+        [
+          "OUT",
+          "STRIKEOUT",
+          "DOUBLE_PLAY",
+          "SAC_FLY",
+          "FIELDERS_CHOICE"
+        ]
+        .includes(
+          event.event_type
+        )
+      ) {
+
+        eventClass =
+          "event-out";
+
+      }
+
+
+      if (
+        [
+          "WALK",
+          "HBP"
+        ]
+        .includes(
+          event.event_type
+        )
+      ) {
+
+        eventClass =
+          "event-walk";
+
+      }
+
+
+      if (
+        [
+          "SUBSTITUTION",
+          "PINCH_HITTER"
+        ]
+        .includes(
+          event.event_type
+        )
+      ) {
+
+        eventClass =
+          "event-sub";
+
+      }
+
+
+      row.className =
+        "game-event " +
+        eventClass;
+
+
+      const half =
+        String(
+          event.inning_half ||
+          ""
+        )
+        .toUpperCase();
+
+
+      const batter =
+        (
+          event.batter_number
+
+            ? "#" +
+              event.batter_number +
+              " "
+
+            : ""
+        ) +
+        (
+          event.batter_name ||
+          ""
+        );
+
+
+      const score =
+        event.away_score_after +
+        "-" +
+        event.home_score_after;
+
+
+      const rbiText =
+        Number(
+          event.rbi ||
+          0
+        ) > 0
+
+          ? " | " +
+            event.rbi +
+            " RBI"
+
+          : "";
+
+
+      const runsText =
+        Number(
+          event.runs_scored ||
+          0
+        ) > 0
+
+          ? " | " +
+            event.runs_scored +
+            " RUN"
+
+          : "";
+
+
+      row.innerHTML = `
+
+        <div class="game-event-main">
+
+          ${half} ${event.inning}
+          —
+          ${batter || event.batting_team}
+          —
+          ${String(event.event_type || "").replaceAll("_", " ")}
+
+          ${rbiText}
+
+          ${runsText}
+
+        </div>
+
+
+        <div class="game-event-description">
+
+          ${event.event_description || ""}
+
+        </div>
+
+
+        <div class="game-event-meta">
+
+          Outs:
+          ${event.outs_before}
+          →
+          ${event.outs_after}
+
+          &nbsp; | &nbsp;
+
+          Score:
+          ${score}
+
+        </div>
+
+      `;
+
+
+      container.appendChild(
+        row
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   POSITIONS
+========================================================= */
 
 function getPositionUsage(
   side,
   excludePlayer = null
-){
+) {
 
   const usage =
-  {};
+    {};
 
 
   POSITION_OPTIONS
-  .forEach(
-    position => {
+    .forEach(
+      position => {
 
-      usage[
-        position
-      ] = 0;
-    }
-  );
+        usage[
+          position
+        ] =
+          0;
+
+      }
+    );
 
 
   getLineup(
@@ -1990,7 +3300,7 @@ function getPositionUsage(
   .forEach(
     player => {
 
-      if(
+      if (
         excludePlayer &&
         String(
           player.id
@@ -1998,65 +3308,70 @@ function getPositionUsage(
         String(
           excludePlayer.id
         )
-      ){
+      ) {
 
         return;
+
       }
 
 
       const position =
-      player.position;
+        player.position;
 
 
-      if(
+      if (
         position &&
         usage[
           position
         ] !==
         undefined
-      ){
+      ) {
 
         usage[
           position
         ]++;
+
       }
+
     }
   );
 
 
   return usage;
+
 }
 
 
 function getAvailablePositions(
   side,
   excludePlayer = null
-){
+) {
 
   const usage =
-  getPositionUsage(
-    side,
-    excludePlayer
-  );
+    getPositionUsage(
+      side,
+      excludePlayer
+    );
 
 
   return POSITION_OPTIONS
-  .filter(
-    position =>
+    .filter(
+      position =>
 
-      (
-        usage[
+        (
+          usage[
+            position
+          ] ||
+          0
+        )
+
+        <
+
+        POSITION_LIMITS[
           position
-        ] ||
-        0
-      )
+        ]
+    );
 
-      <
-
-      POSITION_LIMITS[
-        position
-      ]
-  );
 }
 
 
@@ -2064,26 +3379,26 @@ function createPositionSelect(
   side,
   player,
   isSubstitute = false
-){
+) {
 
   const select =
-  document.createElement(
-    "select"
-  );
+    document.createElement(
+      "select"
+    );
 
 
   const blank =
-  document.createElement(
-    "option"
-  );
+    document.createElement(
+      "option"
+    );
 
 
   blank.value =
-  "";
+    "";
 
 
   blank.textContent =
-  "POS";
+    "POS";
 
 
   select.appendChild(
@@ -2094,67 +3409,70 @@ function createPositionSelect(
   let positions;
 
 
-  if(
+  if (
     isSubstitute
-  ){
+  ) {
 
     positions =
-    POSITION_OPTIONS;
+      POSITION_OPTIONS;
 
-  }else{
+  } else {
 
     positions =
-    getAvailablePositions(
-      side,
-      player
-    );
+      getAvailablePositions(
+        side,
+        player
+      );
 
 
-    if(
+    if (
       player.position &&
       !positions.includes(
         player.position
       )
-    ){
+    ) {
 
       positions.unshift(
         player.position
       );
+
     }
+
   }
 
 
-  positions
-  .forEach(
+  positions.forEach(
     position => {
 
       const option =
-      document.createElement(
-        "option"
-      );
+        document.createElement(
+          "option"
+        );
 
 
       option.value =
-      position;
+        position;
 
 
       option.textContent =
-      position;
+        position;
 
 
-      if(
+      if (
         player.position ===
         position
-      ){
+      ) {
 
         option.selected =
-        true;
+          true;
+
       }
 
 
       select.appendChild(
         option
       );
+
     }
   );
 
@@ -2164,33 +3482,36 @@ function createPositionSelect(
     () => {
 
       player.position =
-      select.value;
+        select.value;
 
 
       renderRosterManager();
+
     }
   );
 
 
   return select;
+
 }
 
 
 function validateLineupPositions(
   side
-){
+) {
 
   const usage =
-  {};
+    {};
 
 
-  POSITION_OPTIONS
-  .forEach(
+  POSITION_OPTIONS.forEach(
     position => {
 
       usage[
         position
-      ] = 0;
+      ] =
+        0;
+
     }
   );
 
@@ -2201,31 +3522,33 @@ function validateLineupPositions(
   .forEach(
     player => {
 
-      if(
+      if (
         player.position
-      ){
+      ) {
 
         usage[
           player.position
         ]++;
+
       }
+
     }
   );
 
 
-  for(
+  for (
     const position
     of POSITION_OPTIONS
-  ){
+  ) {
 
-    if(
+    if (
       usage[
         position
       ] >
       POSITION_LIMITS[
         position
       ]
-    ){
+    ) {
 
       alert(
         position +
@@ -2234,91 +3557,109 @@ function validateLineupPositions(
 
 
       return false;
+
     }
+
   }
 
 
   return true;
+
 }
 
 
-/* =========================
-   LOAD
-========================= */
+/* =========================================================
+   LOAD GAME
+========================================================= */
 
-async function loadGame(){
+async function loadGame() {
 
   const {
     data,
     error
   } =
-  await db
-  .from(
-    "live_games"
-  )
-  .select("*")
-  .eq(
-    "game_code",
-    GAME_CODE
-  )
-  .single();
+    await db
+      .from(
+        "live_games"
+      )
+      .select("*")
+      .eq(
+        "game_code",
+        GAME_CODE
+      )
+      .single();
 
 
-  if(
+  if (
     error
-  ){
+  ) {
 
     console.error(
       error
     );
 
 
-    connectionStatus
-    .innerText =
-    "ERROR — " +
-    error.message;
+    document
+      .getElementById(
+        "connectionStatus"
+      )
+      .innerText =
+        "ERROR — " +
+        error.message;
 
 
     return;
+
   }
 
 
   game =
-  data;
+    data;
 
 
-  connectionStatus
-  .innerText =
-  "● LIVE — Supabase Connected";
+  document
+    .getElementById(
+      "connectionStatus"
+    )
+    .innerText =
+      "● LIVE — Supabase Connected";
 
 
   await loadRosters();
 
 
+  await loadGameEvents();
+
+
   render();
+
 }
 
 
-async function loadRosters(){
+/* =========================================================
+   LOAD ROSTERS
+========================================================= */
+
+async function loadRosters() {
 
   const {
     data,
     error
   } =
-  await db
-  .from(
-    "game_rosters"
-  )
-  .select("*")
-  .eq(
-    "game_code",
-    GAME_CODE
-  );
+    await db
+      .from(
+        "game_rosters"
+      )
+      .select("*")
+      .eq(
+        "game_code",
+        GAME_CODE
+      );
 
 
-  if(
+  if (
     error
-  ){
+  ) {
 
     console.error(
       "ROSTER LOAD ERROR:",
@@ -2327,23 +3668,24 @@ async function loadRosters(){
 
 
     return;
+
   }
 
 
   rosters.away =
-  data.filter(
-    player =>
-      player.team_side ===
-      "away"
-  );
+    data.filter(
+      player =>
+        player.team_side ===
+        "away"
+    );
 
 
   rosters.home =
-  data.filter(
-    player =>
-      player.team_side ===
-      "home"
-  );
+    data.filter(
+      player =>
+        player.team_side ===
+        "home"
+    );
 
 
   normalizeBatterIndex(
@@ -2360,217 +3702,258 @@ async function loadRosters(){
 
 
   renderCurrentBatter();
+
 }
 
 
-/* =========================
+/* =========================================================
    MAIN RENDER
-========================= */
+========================================================= */
 
-function render(){
+function render() {
 
-  if(
+  if (
     !game
   ) return;
 
 
-  homeName.innerText =
-  game.home_team;
+  document
+    .getElementById(
+      "homeName"
+    )
+    .innerText =
+      game.home_team;
 
 
-  awayName.innerText =
-  game.away_team;
+  document
+    .getElementById(
+      "awayName"
+    )
+    .innerText =
+      game.away_team;
 
 
-  homeScore.innerText =
-  game.home_score;
+  document
+    .getElementById(
+      "homeScore"
+    )
+    .innerText =
+      game.home_score;
 
 
-  awayScore.innerText =
-  game.away_score;
+  document
+    .getElementById(
+      "awayScore"
+    )
+    .innerText =
+      game.away_score;
 
 
-  balls.innerText =
-  game.balls;
+  document
+    .getElementById(
+      "balls"
+    )
+    .innerText =
+      game.balls;
 
 
-  strikes.innerText =
-  game.strikes;
+  document
+    .getElementById(
+      "strikes"
+    )
+    .innerText =
+      game.strikes;
 
 
-  outs.innerText =
-  game.outs;
+  document
+    .getElementById(
+      "outs"
+    )
+    .innerText =
+      game.outs;
 
 
-  inningDisplay.innerText =
-  game.inning_half
-  .toUpperCase() +
-  " " +
-  game.inning;
+  document
+    .getElementById(
+      "inningDisplay"
+    )
+    .innerText =
+      game.inning_half
+        .toUpperCase() +
+      " " +
+      game.inning;
 
 
-  if(
+  if (
     document.activeElement !==
     setupAwayTeam
-  ){
+  ) {
 
     setupAwayTeam.value =
-    game.away_team ||
-    "";
+      game.away_team ||
+      "";
+
   }
 
 
-  if(
+  if (
     document.activeElement !==
     setupHomeTeam
-  ){
+  ) {
 
     setupHomeTeam.value =
-    game.home_team ||
-    "";
+      game.home_team ||
+      "";
+
   }
 
 
   baseFirst
-  .classList.toggle(
-    "active",
-    game.runner_first
-  );
+    .classList.toggle(
+      "active",
+      game.runner_first
+    );
 
 
   baseSecond
-  .classList.toggle(
-    "active",
-    game.runner_second
-  );
+    .classList.toggle(
+      "active",
+      game.runner_second
+    );
 
 
   baseThird
-  .classList.toggle(
-    "active",
-    game.runner_third
-  );
+    .classList.toggle(
+      "active",
+      game.runner_third
+    );
 
 
   homePitchCount.innerText =
-  game.home_pitch_count ||
-  0;
+    game.home_pitch_count ||
+    0;
 
 
   awayPitchCount.innerText =
-  game.away_pitch_count ||
-  0;
+    game.away_pitch_count ||
+    0;
 
 
   homePitcherTeam.innerText =
-  game.home_team +
-  " Pitcher";
+    game.home_team +
+    " Pitcher";
 
 
   awayPitcherTeam.innerText =
-  game.away_team +
-  " Pitcher";
+    game.away_team +
+    " Pitcher";
 
 
-  if(
+  if (
     document.activeElement !==
     homePitcherNumber
-  ){
+  ) {
 
     homePitcherNumber.value =
-    game.home_pitcher_number ||
-    "";
+      game.home_pitcher_number ||
+      "";
+
   }
 
 
-  if(
+  if (
     document.activeElement !==
     homePitcherName
-  ){
+  ) {
 
     homePitcherName.value =
-    game.home_pitcher_name ||
-    "";
+      game.home_pitcher_name ||
+      "";
+
   }
 
 
-  if(
+  if (
     document.activeElement !==
     awayPitcherNumber
-  ){
+  ) {
 
     awayPitcherNumber.value =
-    game.away_pitcher_number ||
-    "";
+      game.away_pitcher_number ||
+      "";
+
   }
 
 
-  if(
+  if (
     document.activeElement !==
     awayPitcherName
-  ){
+  ) {
 
     awayPitcherName.value =
-    game.away_pitcher_name ||
-    "";
+      game.away_pitcher_name ||
+      "";
+
   }
 
 
   homePitcherBox
-  .classList.toggle(
-    "active-pitcher",
-    game.inning_half ===
-    "top"
-  );
+    .classList.toggle(
+      "active-pitcher",
+      game.inning_half ===
+      "top"
+    );
 
 
   awayPitcherBox
-  .classList.toggle(
-    "active-pitcher",
-    game.inning_half ===
-    "bottom"
-  );
+    .classList.toggle(
+      "active-pitcher",
+      game.inning_half ===
+      "bottom"
+    );
 
 
   renderRosterManager();
 
 
   renderCurrentBatter();
+
 }
 
 
-/* =========================
+/* =========================================================
    UPDATE GAME
-========================= */
+========================================================= */
 
 async function updateGame(
   changes
-){
+) {
 
   const {
     data,
     error
   } =
-  await db
-  .from(
-    "live_games"
-  )
-  .update(
-    changes
-  )
-  .eq(
-    "game_code",
-    GAME_CODE
-  )
-  .select()
-  .single();
+    await db
+      .from(
+        "live_games"
+      )
+      .update(
+        changes
+      )
+      .eq(
+        "game_code",
+        GAME_CODE
+      )
+      .select()
+      .single();
 
 
-  if(
+  if (
     error
-  ){
+  ) {
 
     console.error(
+      "UPDATE ERROR:",
       error
     );
 
@@ -2581,42 +3964,44 @@ async function updateGame(
 
 
     return false;
+
   }
 
 
   game =
-  data;
+    data;
 
 
   render();
 
 
   return true;
+
 }
 
 
-/* =========================
-   GAME SETUP
-========================= */
+/* =========================================================
+   SETUP
+========================================================= */
 
-async function updateTeams(){
+async function updateTeams() {
 
   const away =
-  setupAwayTeam
-  .value
-  .trim();
+    setupAwayTeam
+      .value
+      .trim();
 
 
   const home =
-  setupHomeTeam
-  .value
-  .trim();
+    setupHomeTeam
+      .value
+      .trim();
 
 
-  if(
+  if (
     !away ||
     !home
-  ){
+  ) {
 
     alert(
       "Enter both teams."
@@ -2624,86 +4009,174 @@ async function updateTeams(){
 
 
     return;
+
   }
 
 
   await updateGame({
 
     away_team:
-    away.toUpperCase(),
+      away.toUpperCase(),
+
 
     home_team:
-    home.toUpperCase()
+      home.toUpperCase()
+
   });
+
 }
 
 
-async function startNewGame(){
+async function startNewGame() {
+
+  const away =
+    setupAwayTeam
+      .value
+      .trim();
+
+
+  const home =
+    setupHomeTeam
+      .value
+      .trim();
+
+
+  if (
+    !away ||
+    !home
+  ) {
+
+    alert(
+      "Enter both teams."
+    );
+
+
+    return;
+
+  }
+
+
+  const confirmed =
+    confirm(
+      "START NEW GAME?\n\n" +
+      away +
+      " vs " +
+      home +
+      "\n\nThis will reset the scoreboard."
+    );
+
+
+  if (
+    !confirmed
+  ) {
+
+    return;
+
+  }
+
 
   currentBatterIndex = {
 
-    away:0,
-    home:0
+    away: 0,
+
+    home: 0
+
   };
 
 
   pinchHitContext = {
 
-    away:null,
-    home:null
+    away: null,
+
+    home: null
+
   };
 
 
   await updateGame({
 
-    away_score:0,
+    away_team:
+      away.toUpperCase(),
 
-    home_score:0,
 
-    inning:1,
+    home_team:
+      home.toUpperCase(),
 
-    inning_half:"top",
 
-    balls:0,
+    away_score:
+      0,
 
-    strikes:0,
 
-    outs:0,
+    home_score:
+      0,
 
-    runner_first:false,
 
-    runner_second:false,
+    inning:
+      1,
 
-    runner_third:false,
 
-    home_pitch_count:0,
+    inning_half:
+      "top",
 
-    away_pitch_count:0
+
+    balls:
+      0,
+
+
+    strikes:
+      0,
+
+
+    outs:
+      0,
+
+
+    runner_first:
+      false,
+
+
+    runner_second:
+      false,
+
+
+    runner_third:
+      false,
+
+
+    home_pitch_count:
+      0,
+
+
+    away_pitch_count:
+      0
+
   });
+
+
+  await loadGameEvents();
+
 }
 
 
-/* =========================
+/* =========================================================
    ROSTER RENDER
-========================= */
+========================================================= */
 
-function renderRosterManager(){
+function renderRosterManager() {
 
-  if(
+  if (
     !game
   ) return;
 
 
-  awayRosterTitle
-  .textContent =
-  game.away_team +
-  " ROSTER";
+  awayRosterTitle.textContent =
+    game.away_team +
+    " ROSTER";
 
 
-  homeRosterTitle
-  .textContent =
-  game.home_team +
-  " ROSTER";
+  homeRosterTitle.textContent =
+    game.home_team +
+    " ROSTER";
 
 
   renderRosterSide(
@@ -2714,74 +4187,75 @@ function renderRosterManager(){
   renderRosterSide(
     "home"
   );
+
 }
 
 
 function renderRosterSide(
   side
-){
+) {
 
   const lineup =
-  getLineup(
-    side
-  );
+    getLineup(
+      side
+    );
 
 
   const subs =
-  getSubs(
-    side
-  );
+    getSubs(
+      side
+    );
 
 
   const used =
-  getUsed(
-    side
-  );
+    getUsed(
+      side
+    );
 
 
   document
-  .getElementById(
-    side +
-    "LineupCounter"
-  )
-  .textContent =
-  "LINEUP: " +
-  lineup.length +
-  " / " +
-  MAX_LINEUP;
+    .getElementById(
+      side +
+      "LineupCounter"
+    )
+    .textContent =
+      "LINEUP: " +
+      lineup.length +
+      " / " +
+      MAX_LINEUP;
 
 
   const lineupContainer =
-  document.getElementById(
-    side +
-    "RosterRows"
-  );
+    document.getElementById(
+      side +
+      "RosterRows"
+    );
 
 
   const subContainer =
-  document.getElementById(
-    side +
-    "SubRows"
-  );
+    document.getElementById(
+      side +
+      "SubRows"
+    );
 
 
   const usedContainer =
-  document.getElementById(
-    side +
-    "UsedRows"
-  );
+    document.getElementById(
+      side +
+      "UsedRows"
+    );
 
 
   lineupContainer.innerHTML =
-  "";
+    "";
 
 
   subContainer.innerHTML =
-  "";
+    "";
 
 
   usedContainer.innerHTML =
-  "";
+    "";
 
 
   /* ACTIVE */
@@ -2790,114 +4264,117 @@ function renderRosterSide(
     player => {
 
       const row =
-      document.createElement(
-        "div"
-      );
+        document.createElement(
+          "div"
+        );
 
 
       row.className =
-      "roster-row";
+        "roster-row";
 
 
       const order =
-      document.createElement(
-        "input"
-      );
+        document.createElement(
+          "input"
+        );
 
 
       order.type =
-      "number";
+        "number";
 
 
       order.min =
-      "1";
+        "1";
 
 
       order.max =
-      "12";
+        "12";
 
 
       order.value =
-      player.batting_order ||
-      "";
+        player.batting_order ||
+        "";
 
 
       const number =
-      document.createElement(
-        "input"
-      );
+        document.createElement(
+          "input"
+        );
 
 
       number.value =
-      player.jersey_number ||
-      "";
+        player.jersey_number ||
+        "";
 
 
       const name =
-      document.createElement(
-        "input"
-      );
+        document.createElement(
+          "input"
+        );
 
 
       name.value =
-      player.player_name ||
-      "";
+        player.player_name ||
+        "";
 
 
       const position =
-      createPositionSelect(
-        side,
-        player,
-        false
-      );
+        createPositionSelect(
+          side,
+          player,
+          false
+        );
 
 
       const del =
-      document.createElement(
-        "button"
-      );
-
-
-      del.textContent =
-      "DELETE";
+        document.createElement(
+          "button"
+        );
 
 
       del.className =
-      "red";
+        "red";
 
 
-      del.onclick =
-      () =>
-      deleteRosterPlayer(
-        side,
-        player
-      );
+      del.textContent =
+        "DELETE";
 
 
       order.oninput =
-      () => {
+        () => {
 
-        player.batting_order =
-        Number(
-          order.value
-        );
-      };
+          player.batting_order =
+            Number(
+              order.value
+            );
+
+        };
 
 
       number.oninput =
-      () => {
+        () => {
 
-        player.jersey_number =
-        number.value;
-      };
+          player.jersey_number =
+            number.value;
+
+        };
 
 
       name.oninput =
-      () => {
+        () => {
 
-        player.player_name =
-        name.value;
-      };
+          player.player_name =
+            name.value;
+
+        };
+
+
+      del.onclick =
+        () =>
+          deleteRosterPlayer(
+            side,
+            player
+          );
 
 
       row.append(
@@ -2910,9 +4387,10 @@ function renderRosterSide(
 
 
       lineupContainer
-      .appendChild(
-        row
-      );
+        .appendChild(
+          row
+        );
+
     }
   );
 
@@ -2923,118 +4401,120 @@ function renderRosterSide(
     player => {
 
       const row =
-      document.createElement(
-        "div"
-      );
+        document.createElement(
+          "div"
+        );
 
 
       row.className =
-      "roster-row sub-row";
+        "roster-row sub-row";
 
 
       const number =
-      document.createElement(
-        "input"
-      );
+        document.createElement(
+          "input"
+        );
 
 
       number.value =
-      player.jersey_number ||
-      "";
+        player.jersey_number ||
+        "";
 
 
       const name =
-      document.createElement(
-        "input"
-      );
+        document.createElement(
+          "input"
+        );
 
 
       name.value =
-      player.player_name ||
-      "";
+        player.player_name ||
+        "";
 
 
       const position =
-      createPositionSelect(
-        side,
-        player,
-        true
-      );
+        createPositionSelect(
+          side,
+          player,
+          true
+        );
 
 
       number.oninput =
-      () => {
+        () => {
 
-        player.jersey_number =
-        number.value;
-      };
+          player.jersey_number =
+            number.value;
+
+        };
 
 
       name.oninput =
-      () => {
+        () => {
 
-        player.player_name =
-        name.value;
-      };
+          player.player_name =
+            name.value;
+
+        };
 
 
       const actions =
-      document.createElement(
-        "div"
-      );
+        document.createElement(
+          "div"
+        );
 
 
       actions.className =
-      "sub-actions";
+        "sub-actions";
 
 
-      const subIn =
-      document.createElement(
-        "button"
-      );
+      const subButton =
+        document.createElement(
+          "button"
+        );
 
 
-      subIn.className =
-      "green";
+      subButton.className =
+        "green";
 
 
-      subIn.textContent =
-      "SUB IN";
+      subButton.textContent =
+        "SUB IN";
 
 
-      subIn.onclick =
-      () =>
-      permanentSub(
-        side,
-        player
-      );
+      subButton.onclick =
+        () =>
+          permanentSub(
+            side,
+            player
+          );
 
 
-      const ph =
-      document.createElement(
-        "button"
-      );
+      const phButton =
+        document.createElement(
+          "button"
+        );
 
 
-      ph.className =
-      "purple";
+      phButton.className =
+        "purple";
 
 
-      ph.textContent =
-      "PINCH HIT";
+      phButton.textContent =
+        "PINCH HIT";
 
 
-      ph.onclick =
-      () =>
-      startPinchHit(
-        side,
-        player
-      );
+      phButton.onclick =
+        () =>
+          startPinchHit(
+            side,
+            player
+          );
 
 
       actions.append(
-        subIn,
-        ph
+        subButton,
+        phButton
       );
 
 
@@ -3046,10 +4526,10 @@ function renderRosterSide(
       );
 
 
-      subContainer
-      .appendChild(
+      subContainer.appendChild(
         row
       );
+
     }
   );
 
@@ -3060,82 +4540,88 @@ function renderRosterSide(
     player => {
 
       const row =
-      document.createElement(
-        "div"
-      );
+        document.createElement(
+          "div"
+        );
 
 
       row.className =
-      "roster-row used-row used-player";
+        "roster-row used-row used-player";
 
 
       const number =
-      document.createElement(
-        "div"
-      );
+        document.createElement(
+          "div"
+        );
 
 
       number.textContent =
-      player.jersey_number
-
-      ? "#" +
         player.jersey_number
 
-      : "—";
+          ? "#" +
+            player.jersey_number
+
+          : "—";
 
 
       const name =
-      document.createElement(
-        "div"
-      );
+        document.createElement(
+          "div"
+        );
 
 
       name.textContent =
-      player.player_name ||
-      "UNKNOWN";
+        player.player_name ||
+        "UNKNOWN";
 
 
-      const pos =
-      document.createElement(
-        "div"
-      );
+      const position =
+        document.createElement(
+          "div"
+        );
 
 
-      pos.textContent =
-      player.position ||
-      "—";
+      position.textContent =
+        player.position ||
+        "—";
 
 
       row.append(
         number,
         name,
-        pos
+        position
       );
 
 
       usedContainer
-      .appendChild(
-        row
-      );
+        .appendChild(
+          row
+        );
+
     }
   );
+
 }
 
 
-/* =========================
-   ADD PLAYERS
-========================= */
+/* =========================================================
+   ADD ROSTER
+========================================================= */
 
 function addLineupPlayer(
   side
-){
+) {
 
-  if(
+  const lineup =
     getLineup(
       side
-    ).length >=
+    );
+
+
+  if (
+    lineup.length >=
     MAX_LINEUP
-  ){
+  ) {
 
     alert(
       "Maximum lineup is 12."
@@ -3143,29 +4629,23 @@ function addLineupPlayer(
 
 
     return;
+
   }
 
 
-  const lineup =
-  getLineup(
-    side
-  );
-
-
   const nextOrder =
-  lineup.length ===
-  0
+    lineup.length === 0
 
-  ? 1
+      ? 1
 
-  : Math.max(
-      ...lineup.map(
-        p =>
-        Number(
-          p.batting_order
-        )
-      )
-    ) + 1;
+      : Math.max(
+          ...lineup.map(
+            player =>
+              Number(
+                player.batting_order
+              )
+          )
+        ) + 1;
 
 
   rosters[
@@ -3173,112 +4653,131 @@ function addLineupPlayer(
   ].push({
 
     id:
-    makeTempId(),
+      makeTempId(),
+
 
     game_code:
-    GAME_CODE,
+      GAME_CODE,
+
 
     team_side:
-    side,
+      side,
+
 
     batting_order:
-    nextOrder,
+      nextOrder,
+
 
     jersey_number:
-    "",
+      "",
+
 
     player_name:
-    "",
+      "",
+
 
     position:
-    "",
+      "",
+
 
     roster_status:
-    "active"
+      "active"
+
   });
 
 
   renderRosterManager();
+
 }
 
 
 function addSubstitute(
   side
-){
+) {
 
   rosters[
     side
   ].push({
 
     id:
-    makeTempId(),
+      makeTempId(),
+
 
     game_code:
-    GAME_CODE,
+      GAME_CODE,
+
 
     team_side:
-    side,
+      side,
+
 
     batting_order:
-    null,
+      null,
+
 
     jersey_number:
-    "",
+      "",
+
 
     player_name:
-    "",
+      "",
+
 
     position:
-    "",
+      "",
+
 
     roster_status:
-    "sub"
+      "sub"
+
   });
 
 
   renderRosterManager();
+
 }
 
 
-/* =========================
+/* =========================================================
    SAVE ROSTER
-========================= */
+========================================================= */
 
 async function saveRoster(
   side
-){
+) {
 
-  if(
+  if (
     !validateLineupPositions(
       side
     )
-  ){
+  ) {
 
     return;
+
   }
 
 
   const lineup =
-  getLineup(
-    side
-  );
+    getLineup(
+      side
+    );
 
 
   const orders =
-  lineup.map(
-    p =>
-    Number(
-      p.batting_order
-    )
-  );
+    lineup.map(
+      player =>
+        Number(
+          player.batting_order
+        )
+    );
 
 
-  if(
+  if (
     new Set(
       orders
     ).size !==
     orders.length
-  ){
+  ) {
 
     alert(
       "Duplicate batting order."
@@ -3286,74 +4785,82 @@ async function saveRoster(
 
 
     return;
+
   }
 
 
   const existing =
-  rosters[
-    side
-  ].filter(
-    p =>
-    !isTempPlayer(
-      p
-    )
-  );
+    rosters[
+      side
+    ]
+    .filter(
+      player =>
+        !isTempPlayer(
+          player
+        )
+    );
 
 
   const temp =
-  rosters[
-    side
-  ].filter(
-    p =>
-    isTempPlayer(
-      p
-    )
-  );
+    rosters[
+      side
+    ]
+    .filter(
+      player =>
+        isTempPlayer(
+          player
+        )
+    );
 
 
-  for(
+  for (
     const player
     of existing
-  ){
+  ) {
 
     const {
       error
     } =
-    await db
-    .from(
-      "game_rosters"
-    )
-    .update({
+      await db
+        .from(
+          "game_rosters"
+        )
+        .update({
 
-      batting_order:
-      player.batting_order,
-
-      jersey_number:
-      player.jersey_number ||
-      "",
-
-      player_name:
-      player.player_name ||
-      "",
-
-      position:
-      player.position ||
-      "",
-
-      roster_status:
-      playerStatus(
-        player
-      )
-    })
-    .eq(
-      "id",
-      player.id
-    );
+          batting_order:
+            player.batting_order,
 
 
-    if(
+          jersey_number:
+            player.jersey_number ||
+            "",
+
+
+          player_name:
+            player.player_name ||
+            "",
+
+
+          position:
+            player.position ||
+            "",
+
+
+          roster_status:
+            playerStatus(
+              player
+            )
+
+        })
+        .eq(
+          "id",
+          player.id
+        );
+
+
+    if (
       error
-    ){
+    ) {
 
       alert(
         error.message
@@ -3361,63 +4868,71 @@ async function saveRoster(
 
 
       return;
+
     }
+
   }
 
 
-  if(
-    temp.length >
-    0
-  ){
+  if (
+    temp.length
+  ) {
 
     const rows =
-    temp.map(
-      p => ({
+      temp.map(
+        player => ({
 
-        game_code:
-        GAME_CODE,
+          game_code:
+            GAME_CODE,
 
-        team_side:
-        side,
 
-        batting_order:
-        p.batting_order,
+          team_side:
+            side,
 
-        jersey_number:
-        p.jersey_number ||
-        "",
 
-        player_name:
-        p.player_name ||
-        "",
+          batting_order:
+            player.batting_order,
 
-        position:
-        p.position ||
-        "",
 
-        roster_status:
-        playerStatus(
-          p
-        )
-      })
-    );
+          jersey_number:
+            player.jersey_number ||
+            "",
+
+
+          player_name:
+            player.player_name ||
+            "",
+
+
+          position:
+            player.position ||
+            "",
+
+
+          roster_status:
+            playerStatus(
+              player
+            )
+
+        })
+      );
 
 
     const {
       error
     } =
-    await db
-    .from(
-      "game_rosters"
-    )
-    .insert(
-      rows
-    );
+      await db
+        .from(
+          "game_rosters"
+        )
+        .insert(
+          rows
+        );
 
 
-    if(
+    if (
       error
-    ){
+    ) {
 
       alert(
         error.message
@@ -3425,7 +4940,9 @@ async function saveRoster(
 
 
       return;
+
     }
+
   }
 
 
@@ -3435,19 +4952,20 @@ async function saveRoster(
   alert(
     "Roster saved."
   );
+
 }
 
 
-/* =========================
+/* =========================================================
    DELETE
-========================= */
+========================================================= */
 
 async function deleteRosterPlayer(
   side,
   player
-){
+) {
 
-  if(
+  if (
     !confirm(
       "Delete " +
       playerLabel(
@@ -3455,28 +4973,30 @@ async function deleteRosterPlayer(
       ) +
       "?"
     )
-  ){
+  ) {
 
     return;
+
   }
 
 
-  if(
+  if (
     isTempPlayer(
       player
     )
-  ){
+  ) {
 
     rosters[
       side
     ] =
-    rosters[
-      side
-    ].filter(
-      p =>
-      p.id !==
-      player.id
-    );
+      rosters[
+        side
+      ]
+      .filter(
+        item =>
+          item.id !==
+          player.id
+      );
 
 
     renderRosterManager();
@@ -3486,26 +5006,27 @@ async function deleteRosterPlayer(
 
 
     return;
+
   }
 
 
   const {
     error
   } =
-  await db
-  .from(
-    "game_rosters"
-  )
-  .delete()
-  .eq(
-    "id",
-    player.id
-  );
+    await db
+      .from(
+        "game_rosters"
+      )
+      .delete()
+      .eq(
+        "id",
+        player.id
+      );
 
 
-  if(
+  if (
     error
-  ){
+  ) {
 
     alert(
       error.message
@@ -3513,216 +5034,221 @@ async function deleteRosterPlayer(
 
 
     return;
+
   }
 
 
   await loadRosters();
+
 }
 
 
-/* =========================
+/* =========================================================
    PERMANENT SUB
-========================= */
+========================================================= */
 
 async function permanentSub(
   side,
   substitute
-){
+) {
 
   const lineup =
-  getLineup(
-    side
-  );
-
-
-  if(
-    lineup.length ===
-    0
-  ){
-
-    alert(
-      "No active lineup."
+    getLineup(
+      side
     );
 
 
+  if (
+    !lineup.length
+  ) {
+
     return;
+
   }
 
 
   const targetId =
-  await askChoice(
-    "Who is " +
-    playerLabel(
-      substitute
-    ) +
-    " replacing?",
+    await askChoice(
 
-    lineup.map(
-      player => ({
+      "Who is " +
+      playerLabel(
+        substitute
+      ) +
+      " replacing?",
 
-        label:
-        player.batting_order +
-        ". " +
-        playerLabel(
-          player
-        ) +
-        " — " +
-        (
-          player.position ||
-          "NO POS"
-        ),
 
-        value:
-        String(
-          player.id
-        ),
+      lineup.map(
+        player => ({
 
-        className:
-        "blue"
-      })
-    )
-  );
+          label:
+            player.batting_order +
+            ". " +
+            playerLabel(
+              player
+            ) +
+            " — " +
+            (
+              player.position ||
+              "NO POS"
+            ),
+
+
+          value:
+            String(
+              player.id
+            ),
+
+
+          className:
+            "blue"
+
+        })
+      )
+
+    );
 
 
   const outgoing =
-  lineup.find(
-    p =>
-    String(
-      p.id
-    ) ===
-    String(
-      targetId
-    )
-  );
+    lineup.find(
+      player =>
+        String(
+          player.id
+        ) ===
+        String(
+          targetId
+        )
+    );
 
 
-  if(
+  if (
     !outgoing
-  ){
+  ) {
 
     return;
+
   }
 
 
-  const keepPosition =
-  await askYesNo(
-    "Keep " +
-    (
-      outgoing.position ||
-      "the same defensive position"
-    ) +
-    "?"
-  );
-
-
-  let newPosition =
-  outgoing.position ||
-  substitute.position ||
-  "";
-
-
-  if(
-    !keepPosition
-  ){
-
-    const available =
-    getAvailablePositions(
-      side,
-      outgoing
-    );
-
-
-    const chosen =
-    await askChoice(
-      "Choose new position",
-      available.map(
-        position => ({
-
-          label:
-          position,
-
-          value:
-          position,
-
-          className:
-          "blue"
-        })
-      )
-    );
-
-
-    newPosition =
-    chosen;
-  }
-
-
-  /*
-    Save any unsaved substitute first.
-  */
-
-  if(
+  if (
     isTempPlayer(
       substitute
     )
-  ){
+  ) {
 
     await saveRoster(
       side
     );
 
 
-    const refreshedSub =
-    getSubs(
-      side
-    ).find(
-      p =>
-      p.jersey_number ===
-      substitute.jersey_number &&
-      p.player_name ===
-      substitute.player_name
-    );
-
-
-    if(
-      !refreshedSub
-    ){
-
-      alert(
-        "Could not locate substitute after save."
+    substitute =
+      getSubs(
+        side
+      )
+      .find(
+        player =>
+          player.jersey_number ===
+          substitute.jersey_number &&
+          player.player_name ===
+          substitute.player_name
       );
 
 
+    if (
+      !substitute
+    ) {
+
       return;
+
     }
 
-
-    substitute =
-    refreshedSub;
   }
+
+
+  const keepPosition =
+    await askYesNo(
+
+      "Keep " +
+      (
+        outgoing.position ||
+        "the same position"
+      ) +
+      "?"
+
+    );
+
+
+  let newPosition =
+    outgoing.position ||
+    substitute.position ||
+    "";
+
+
+  if (
+    !keepPosition
+  ) {
+
+    const positions =
+      getAvailablePositions(
+        side,
+        outgoing
+      );
+
+
+    newPosition =
+      await askChoice(
+
+        "Choose position",
+
+
+        positions.map(
+          position => ({
+
+            label:
+              position,
+
+
+            value:
+              position,
+
+
+            className:
+              "blue"
+
+          })
+        )
+
+      );
+
+  }
+
+
+  const before =
+    snapshotGame();
 
 
   const {
     error:
     outgoingError
   } =
-  await db
-  .from(
-    "game_rosters"
-  )
-  .update({
+    await db
+      .from(
+        "game_rosters"
+      )
+      .update({
 
-    roster_status:
-    "used"
-  })
-  .eq(
-    "id",
-    outgoing.id
-  );
+        roster_status:
+          "used"
+
+      })
+      .eq(
+        "id",
+        outgoing.id
+      );
 
 
-  if(
+  if (
     outgoingError
-  ){
+  ) {
 
     alert(
       outgoingError.message
@@ -3730,6 +5256,7 @@ async function permanentSub(
 
 
     return;
+
   }
 
 
@@ -3737,30 +5264,33 @@ async function permanentSub(
     error:
     incomingError
   } =
-  await db
-  .from(
-    "game_rosters"
-  )
-  .update({
+    await db
+      .from(
+        "game_rosters"
+      )
+      .update({
 
-    roster_status:
-    "active",
-
-    batting_order:
-    outgoing.batting_order,
-
-    position:
-    newPosition
-  })
-  .eq(
-    "id",
-    substitute.id
-  );
+        roster_status:
+          "active",
 
 
-  if(
+        batting_order:
+          outgoing.batting_order,
+
+
+        position:
+          newPosition
+
+      })
+      .eq(
+        "id",
+        substitute.id
+      );
+
+
+  if (
     incomingError
-  ){
+  ) {
 
     alert(
       incomingError.message
@@ -3768,49 +5298,90 @@ async function permanentSub(
 
 
     return;
+
   }
 
 
   await loadRosters();
 
 
-  render();
+  await logGameEvent({
+
+    eventType:
+      "SUBSTITUTION",
+
+
+    description:
+      playerLabel(
+        substitute
+      ) +
+      " entered for " +
+      playerLabel(
+        outgoing
+      ) +
+      " in batting spot #" +
+      outgoing.batting_order +
+      ". Position: " +
+      newPosition,
+
+
+    runs:
+      0,
+
+
+    rbi:
+      0,
+
+
+    batter:
+      substitute,
+
+
+    side:
+      side,
+
+
+    before:
+      before,
+
+
+    after:
+      snapshotGame()
+
+  });
+
 }
 
 
-/* =========================
+/* =========================================================
    PINCH HIT
-========================= */
+========================================================= */
 
 async function startPinchHit(
   side,
   substitute
-){
+) {
 
-  /*
-    Can't PH for the team
-    that isn't batting.
-  */
-
-  if(
+  if (
     side !==
     battingSide()
-  ){
+  ) {
 
     alert(
-      "Pinch hitter can only be activated for the team currently batting."
+      "Pinch hitter can only be used for the batting team."
     );
 
 
     return;
+
   }
 
 
-  if(
+  if (
     pinchHitContext[
       side
     ]
-  ){
+  ) {
 
     alert(
       "A pinch hitter is already active."
@@ -3818,126 +5389,123 @@ async function startPinchHit(
 
 
     return;
+
   }
 
 
   const lineup =
-  getLineup(
-    side
-  );
+    getLineup(
+      side
+    );
 
 
   const targetId =
-  await askChoice(
-    "Who is " +
-    playerLabel(
-      substitute
-    ) +
-    " pinch hitting for?",
+    await askChoice(
 
-    lineup.map(
-      player => ({
+      "Who is " +
+      playerLabel(
+        substitute
+      ) +
+      " pinch hitting for?",
 
-        label:
-        player.batting_order +
-        ". " +
-        playerLabel(
-          player
-        ),
 
-        value:
-        String(
-          player.id
-        ),
+      lineup.map(
+        player => ({
 
-        className:
-        "purple"
-      })
-    )
-  );
+          label:
+            player.batting_order +
+            ". " +
+            playerLabel(
+              player
+            ),
+
+
+          value:
+            String(
+              player.id
+            ),
+
+
+          className:
+            "purple"
+
+        })
+      )
+
+    );
 
 
   const original =
-  lineup.find(
-    player =>
-    String(
-      player.id
-    ) ===
-    String(
-      targetId
-    )
-  );
+    lineup.find(
+      player =>
+        String(
+          player.id
+        ) ===
+        String(
+          targetId
+        )
+    );
 
 
-  if(
+  if (
     !original
-  ){
+  ) {
 
     return;
+
   }
 
 
-  /*
-    Make current batter index
-    match the selected lineup spot.
-  */
-
   const index =
-  lineup.findIndex(
-    player =>
-    String(
-      player.id
-    ) ===
-    String(
-      original.id
-    )
-  );
+    lineup.findIndex(
+      player =>
+        String(
+          player.id
+        ) ===
+        String(
+          original.id
+        )
+    );
 
 
   currentBatterIndex[
     side
   ] =
-  index;
+    index;
 
 
-  /*
-    Unsaved substitute:
-    save first.
-  */
-
-  if(
+  if (
     isTempPlayer(
       substitute
     )
-  ){
+  ) {
 
     await saveRoster(
       side
     );
 
 
-    const refreshed =
-    getSubs(
-      side
-    ).find(
-      player =>
-      player.jersey_number ===
-      substitute.jersey_number &&
-      player.player_name ===
-      substitute.player_name
-    );
+    substitute =
+      getSubs(
+        side
+      )
+      .find(
+        player =>
+          player.jersey_number ===
+          substitute.jersey_number &&
+          player.player_name ===
+          substitute.player_name
+      );
 
 
-    if(
-      !refreshed
-    ){
+    if (
+      !substitute
+    ) {
 
       return;
+
     }
 
-
-    substitute =
-    refreshed;
   }
 
 
@@ -3946,197 +5514,151 @@ async function startPinchHit(
   ] = {
 
     substitute:
-    substitute,
+      substitute,
+
 
     original:
-    original
+      original
+
   };
 
 
-  renderCurrentBatter();
-}
+  const before =
+    snapshotGame();
 
 
-/* =========================
-   FINISH PLATE APPEARANCE
-========================= */
+  await logGameEvent({
 
-async function completePlateAppearance(
-  side
-){
-
-  const ph =
-  pinchHitContext[
-    side
-  ];
+    eventType:
+      "PINCH_HITTER",
 
 
-  /*
-    If PH was used, retire him
-    after this one PA.
-  */
-
-  if(
-    ph
-  ){
-
-    const {
-      error
-    } =
-    await db
-    .from(
-      "game_rosters"
-    )
-    .update({
-
-      roster_status:
-      "used"
-    })
-    .eq(
-      "id",
-      ph.substitute.id
-    );
+    description:
+      playerLabel(
+        substitute
+      ) +
+      " pinch hitting for " +
+      playerLabel(
+        original
+      ) +
+      " in batting spot #" +
+      original.batting_order,
 
 
-    if(
-      error
-    ){
-
-      console.error(
-        error
-      );
-    }
+    batter:
+      substitute,
 
 
-    pinchHitContext[
-      side
-    ] =
-    null;
+    side:
+      side,
 
 
-    await loadRosters();
-  }
+    before:
+      before,
 
 
-  /*
-    Advance original lineup spot.
-  */
+    after:
+      before
 
-  const roster =
-  getLineup(
-    side
-  );
-
-
-  if(
-    roster.length >
-    0
-  ){
-
-    currentBatterIndex[
-      side
-    ] =
-    (
-      currentBatterIndex[
-        side
-      ] +
-      1
-    ) %
-    roster.length;
-  }
+  });
 
 
   renderCurrentBatter();
+
 }
 
 
-/* =========================
-   CURRENT BATTER
-========================= */
+/* =========================================================
+   BATTER
+========================================================= */
 
 function normalizeBatterIndex(
   side
-){
+) {
 
   const roster =
-  getLineup(
-    side
-  );
+    getLineup(
+      side
+    );
 
 
-  if(
-    roster.length ===
-    0
-  ){
+  if (
+    !roster.length
+  ) {
 
     currentBatterIndex[
       side
-    ] = 0;
+    ] =
+      0;
 
 
     return;
+
   }
 
 
-  if(
+  if (
     currentBatterIndex[
       side
     ] >=
     roster.length
-  ){
-
-    currentBatterIndex[
-      side
-    ] = 0;
-  }
-
-
-  if(
-    currentBatterIndex[
-      side
-    ] <
-    0
-  ){
+  ) {
 
     currentBatterIndex[
       side
     ] =
-    roster.length -
-    1;
+      0;
+
   }
+
+
+  if (
+    currentBatterIndex[
+      side
+    ] <
+    0
+  ) {
+
+    currentBatterIndex[
+      side
+    ] =
+      roster.length -
+      1;
+
+  }
+
 }
 
 
-function getCurrentBatter(){
+function getCurrentBatterForSide(
+  side
+) {
 
-  const side =
-  battingSide();
-
-
-  if(
+  if (
     pinchHitContext[
       side
     ]
-  ){
+  ) {
 
     return pinchHitContext[
       side
     ].substitute;
+
   }
 
 
   const lineup =
-  getLineup(
-    side
-  );
+    getLineup(
+      side
+    );
 
 
-  if(
-    lineup.length ===
-    0
-  ){
+  if (
+    !lineup.length
+  ) {
 
     return null;
+
   }
 
 
@@ -4150,67 +5672,67 @@ function getCurrentBatter(){
       side
     ]
   ];
+
 }
 
 
-function renderCurrentBatter(){
+function getCurrentBatter() {
 
-  if(
+  return getCurrentBatterForSide(
+    battingSide()
+  );
+
+}
+
+
+function renderCurrentBatter() {
+
+  if (
     !game
   ) return;
 
 
   const side =
-  battingSide();
+    battingSide();
 
 
   const lineup =
-  getLineup(
-    side
-  );
+    getLineup(
+      side
+    );
 
 
-  const ph =
-  pinchHitContext[
-    side
-  ];
+  currentBatterTeam.textContent =
 
+    side === "away"
 
-  currentBatterTeam
-  .textContent =
+      ? game.away_team
 
-  side ===
-  "away"
-
-  ? game.away_team
-  : game.home_team;
+      : game.home_team;
 
 
   currentBatterSelect.innerHTML =
-  "";
+    "";
 
 
-  if(
-    lineup.length ===
-    0
-  ){
+  if (
+    !lineup.length
+  ) {
 
-    currentBatterName
-    .textContent =
-    "NO LINEUP";
+    currentBatterName.textContent =
+      "NO LINEUP";
 
 
-    nextBatterDisplay
-    .textContent =
-    "NEXT: —";
+    nextBatterDisplay.textContent =
+      "NEXT: —";
 
 
-    phBadge
-    .style.display =
-    "none";
+    phBadge.style.display =
+      "none";
 
 
     return;
+
   }
 
 
@@ -4226,113 +5748,117 @@ function renderCurrentBatter(){
     ) => {
 
       const option =
-      document.createElement(
-        "option"
-      );
+        document.createElement(
+          "option"
+        );
 
 
       option.value =
-      index;
+        index;
 
 
       option.textContent =
-      player.batting_order +
-      ". " +
-      playerLabel(
-        player
-      );
+        player.batting_order +
+        ". " +
+        playerLabel(
+          player
+        );
 
 
-      if(
+      if (
         index ===
         currentBatterIndex[
           side
         ]
-      ){
+      ) {
 
         option.selected =
-        true;
+          true;
+
       }
 
 
-      currentBatterSelect
-      .appendChild(
+      currentBatterSelect.appendChild(
         option
       );
+
     }
   );
 
 
-  if(
+  const ph =
+    pinchHitContext[
+      side
+    ];
+
+
+  if (
     ph
-  ){
+  ) {
 
-    phBadge
-    .style.display =
-    "block";
-
-
-    currentBatterName
-    .textContent =
-    playerLabel(
-      ph.substitute
-    ) +
-    " for " +
-    playerLabel(
-      ph.original
-    );
-
-  }else{
-
-    phBadge
-    .style.display =
-    "none";
+    phBadge.style.display =
+      "block";
 
 
-    currentBatterName
-    .textContent =
-    playerLabel(
-      lineup[
-        currentBatterIndex[
-          side
+    currentBatterName.textContent =
+      playerLabel(
+        ph.substitute
+      ) +
+      " for " +
+      playerLabel(
+        ph.original
+      );
+
+  } else {
+
+    phBadge.style.display =
+      "none";
+
+
+    currentBatterName.textContent =
+      playerLabel(
+        lineup[
+          currentBatterIndex[
+            side
+          ]
         ]
-      ]
-    );
+      );
+
   }
 
 
   const nextIndex =
-  (
-    currentBatterIndex[
-      side
-    ] +
-    1
-  ) %
-  lineup.length;
+    (
+      currentBatterIndex[
+        side
+      ] +
+      1
+    ) %
+    lineup.length;
 
 
-  nextBatterDisplay
-  .textContent =
-  "NEXT: " +
-  playerLabel(
-    lineup[
-      nextIndex
-    ]
-  );
+  nextBatterDisplay.textContent =
+    "NEXT: " +
+    playerLabel(
+      lineup[
+        nextIndex
+      ]
+    );
+
 }
 
 
-function selectCurrentBatter(){
+function selectCurrentBatter() {
 
   const side =
-  battingSide();
+    battingSide();
 
 
-  if(
+  if (
     pinchHitContext[
       side
     ]
-  ){
+  ) {
 
     alert(
       "Finish the pinch hitter's plate appearance first."
@@ -4343,33 +5869,34 @@ function selectCurrentBatter(){
 
 
     return;
+
   }
 
 
   currentBatterIndex[
     side
   ] =
-  Number(
-    currentBatterSelect
-    .value
-  );
+    Number(
+      currentBatterSelect.value
+    );
 
 
   renderCurrentBatter();
+
 }
 
 
-function nextBatter(){
+function nextBatter() {
 
   const side =
-  battingSide();
+    battingSide();
 
 
-  if(
+  if (
     pinchHitContext[
       side
     ]
-  ){
+  ) {
 
     alert(
       "Finish the pinch hitter's plate appearance first."
@@ -4377,16 +5904,17 @@ function nextBatter(){
 
 
     return;
+
   }
 
 
   const lineup =
-  getLineup(
-    side
-  );
+    getLineup(
+      side
+    );
 
 
-  if(
+  if (
     !lineup.length
   ) return;
 
@@ -4394,42 +5922,44 @@ function nextBatter(){
   currentBatterIndex[
     side
   ] =
-  (
-    currentBatterIndex[
-      side
-    ] +
-    1
-  ) %
-  lineup.length;
+    (
+      currentBatterIndex[
+        side
+      ] +
+      1
+    ) %
+    lineup.length;
 
 
   renderCurrentBatter();
+
 }
 
 
-function previousBatter(){
+function previousBatter() {
 
   const side =
-  battingSide();
+    battingSide();
 
 
-  if(
+  if (
     pinchHitContext[
       side
     ]
-  ){
+  ) {
 
     return;
+
   }
 
 
   const lineup =
-  getLineup(
-    side
-  );
+    getLineup(
+      side
+    );
 
 
-  if(
+  if (
     !lineup.length
   ) return;
 
@@ -4439,134 +5969,221 @@ function previousBatter(){
   ]--;
 
 
-  if(
+  if (
     currentBatterIndex[
       side
-    ] <
-    0
-  ){
+    ] < 0
+  ) {
 
     currentBatterIndex[
       side
     ] =
-    lineup.length -
-    1;
+      lineup.length -
+      1;
+
   }
 
 
   renderCurrentBatter();
+
 }
 
 
-/* =========================
-   WALK / HBP FORCE
-========================= */
+/* =========================================================
+   COMPLETE PA
+========================================================= */
+
+async function completePlateAppearance(
+  side
+) {
+
+  const ph =
+    pinchHitContext[
+      side
+    ];
+
+
+  if (
+    ph
+  ) {
+
+    await db
+      .from(
+        "game_rosters"
+      )
+      .update({
+
+        roster_status:
+          "used"
+
+      })
+      .eq(
+        "id",
+        ph.substitute.id
+      );
+
+
+    pinchHitContext[
+      side
+    ] =
+      null;
+
+
+    await loadRosters();
+
+  }
+
+
+  const roster =
+    getLineup(
+      side
+    );
+
+
+  if (
+    roster.length
+  ) {
+
+    currentBatterIndex[
+      side
+    ] =
+      (
+        currentBatterIndex[
+          side
+        ] +
+        1
+      ) %
+      roster.length;
+
+  }
+
+
+  renderCurrentBatter();
+
+}
+
+
+/* =========================================================
+   FORCE WALK / HBP
+========================================================= */
 
 function forceBatterToFirst(
   changes
-){
+) {
 
   const first =
-  Boolean(
-    game.runner_first
-  );
+    Boolean(
+      game.runner_first
+    );
 
 
   const second =
-  Boolean(
-    game.runner_second
-  );
+    Boolean(
+      game.runner_second
+    );
 
 
   const third =
-  Boolean(
-    game.runner_third
-  );
+    Boolean(
+      game.runner_third
+    );
 
 
   changes.runner_first =
-  true;
-
-
-  if(
-    first
-  ){
-
-    changes.runner_second =
     true;
 
 
-    if(
-      second
-    ){
+  if (
+    first
+  ) {
 
-      changes.runner_third =
+    changes.runner_second =
       true;
 
 
-      if(
+    if (
+      second
+    ) {
+
+      changes.runner_third =
+        true;
+
+
+      if (
         third
-      ){
+      ) {
 
         const scoreField =
-        battingScoreField();
+          battingScoreField();
 
 
         changes[
           scoreField
         ] =
-        Number(
-          game[
-            scoreField
-          ] ||
-          0
-        ) +
-        1;
+          Number(
+            game[
+              scoreField
+            ] ||
+            0
+          ) + 1;
+
       }
+
     }
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    BALL
-========================= */
+========================================================= */
 
-async function ball(){
+async function ball() {
 
-  const eventSide =
-  battingSide();
+  const side =
+    battingSide();
+
+
+  const batter =
+    getCurrentBatterForSide(
+      side
+    );
+
+
+  const before =
+    snapshotGame();
 
 
   const pitchField =
-  activePitchField();
+    activePitchField();
 
 
   const changes = {
 
     [pitchField]:
+      Number(
+        game[
+          pitchField
+        ] ||
+        0
+      ) + 1
 
-    Number(
-      game[
-        pitchField
-      ] ||
-      0
-    ) +
-    1
   };
 
 
-  if(
+  if (
     game.balls >=
     3
-  ){
+  ) {
 
     changes.balls =
-    0;
+      0;
 
 
     changes.strikes =
-    0;
+      0;
 
 
     forceBatterToFirst(
@@ -4575,165 +6192,297 @@ async function ball(){
 
 
     const success =
-    await updateGame(
-      changes
-    );
+      await updateGame(
+        changes
+      );
 
 
-    if(
+    if (
       success
-    ){
+    ) {
+
+      const after =
+        snapshotGame();
+
+
+      const runs =
+        (
+          side === "away"
+
+            ? after.away_score -
+              before.away_score
+
+            : after.home_score -
+              before.home_score
+        );
+
+
+      await logGameEvent({
+
+        eventType:
+          "WALK",
+
+
+        description:
+          playerLabel(
+            batter
+          ) +
+          " walked.",
+
+
+        runs:
+          runs,
+
+
+        rbi:
+          runs,
+
+
+        batter:
+          batter,
+
+
+        side:
+          side,
+
+
+        before:
+          before,
+
+
+        after:
+          after
+
+      });
+
 
       await completePlateAppearance(
-        eventSide
+        side
       );
+
     }
 
-  }else{
+
+  } else {
 
     changes.balls =
-    game.balls +
-    1;
+      game.balls +
+      1;
 
 
     await updateGame(
       changes
     );
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    STRIKE
-========================= */
+========================================================= */
 
-async function strike(){
+async function strike() {
 
-  const eventSide =
-  battingSide();
+  const side =
+    battingSide();
+
+
+  const batter =
+    getCurrentBatterForSide(
+      side
+    );
+
+
+  const before =
+    snapshotGame();
 
 
   const pitchField =
-  activePitchField();
+    activePitchField();
 
 
-  const pitch =
-  Number(
-    game[
-      pitchField
-    ] ||
-    0
-  ) +
-  1;
-
-
-  if(
-    game.strikes >=
-    2
-  ){
-
-    const success =
-    await processOut({
-
-      [pitchField]:
-      pitch
-    });
-
-
-    if(
-      success
-    ){
-
-      await completePlateAppearance(
-        eventSide
-      );
-    }
-
-  }else{
-
-    await updateGame({
-
-      strikes:
-      game.strikes +
-      1,
-
-      [pitchField]:
-      pitch
-    });
-  }
-}
-
-
-/* =========================
-   FOUL
-========================= */
-
-async function foul(){
-
-  const pitchField =
-  activePitchField();
-
-
-  const changes = {
-
-    [pitchField]:
-
+  const newPitch =
     Number(
       game[
         pitchField
       ] ||
       0
-    ) +
-    1
+    ) + 1;
+
+
+  if (
+    game.strikes >=
+    2
+  ) {
+
+    const success =
+      await processOut({
+
+        [pitchField]:
+          newPitch
+
+      });
+
+
+    if (
+      success
+    ) {
+
+      const after =
+        snapshotGame();
+
+
+      await logGameEvent({
+
+        eventType:
+          "STRIKEOUT",
+
+
+        description:
+          playerLabel(
+            batter
+          ) +
+          " struck out.",
+
+
+        runs:
+          0,
+
+
+        rbi:
+          0,
+
+
+        batter:
+          batter,
+
+
+        side:
+          side,
+
+
+        before:
+          before,
+
+
+        after:
+          after
+
+      });
+
+
+      await completePlateAppearance(
+        side
+      );
+
+    }
+
+
+  } else {
+
+    await updateGame({
+
+      strikes:
+        game.strikes +
+        1,
+
+
+      [pitchField]:
+        newPitch
+
+    });
+
+  }
+
+}
+
+
+/* =========================================================
+   FOUL
+========================================================= */
+
+async function foul() {
+
+  const pitchField =
+    activePitchField();
+
+
+  const changes = {
+
+    [pitchField]:
+      Number(
+        game[
+          pitchField
+        ] ||
+        0
+      ) + 1
+
   };
 
 
-  if(
+  if (
     game.strikes <
     2
-  ){
+  ) {
 
     changes.strikes =
-    game.strikes +
-    1;
+      game.strikes +
+      1;
+
   }
 
 
   await updateGame(
     changes
   );
+
 }
 
 
-/* =========================
+/* =========================================================
    HBP
-========================= */
+========================================================= */
 
-async function hitByPitch(){
+async function hitByPitch() {
 
-  const eventSide =
-  battingSide();
+  const side =
+    battingSide();
+
+
+  const batter =
+    getCurrentBatterForSide(
+      side
+    );
+
+
+  const before =
+    snapshotGame();
 
 
   const pitchField =
-  activePitchField();
+    activePitchField();
 
 
   const changes = {
 
     [pitchField]:
+      Number(
+        game[
+          pitchField
+        ] ||
+        0
+      ) + 1,
 
-    Number(
-      game[
-        pitchField
-      ] ||
+
+    balls:
+      0,
+
+
+    strikes:
       0
-    ) +
-    1,
 
-    balls:0,
-
-    strikes:0
   };
 
 
@@ -4743,1146 +6492,1855 @@ async function hitByPitch(){
 
 
   const success =
-  await updateGame(
-    changes
-  );
+    await updateGame(
+      changes
+    );
 
 
-  if(
+  if (
     success
-  ){
+  ) {
+
+    const after =
+      snapshotGame();
+
+
+    const runs =
+      side === "away"
+
+        ? after.away_score -
+          before.away_score
+
+        : after.home_score -
+          before.home_score;
+
+
+    await logGameEvent({
+
+      eventType:
+        "HBP",
+
+
+      description:
+        playerLabel(
+          batter
+        ) +
+        " hit by pitch.",
+
+
+      runs:
+        runs,
+
+
+      rbi:
+        runs,
+
+
+      batter:
+        batter,
+
+
+      side:
+        side,
+
+
+      before:
+        before,
+
+
+      after:
+        after
+
+    });
+
 
     await completePlateAppearance(
-      eventSide
+      side
     );
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    SINGLE
-========================= */
+========================================================= */
 
-async function singleHit(){
+async function singleHit() {
 
-  const eventSide =
-  battingSide();
+  const side =
+    battingSide();
+
+
+  const batter =
+    getCurrentBatterForSide(
+      side
+    );
+
+
+  const before =
+    snapshotGame();
+
+
+  const notes =
+    [];
 
 
   const hadFirst =
-  Boolean(
-    game.runner_first
-  );
+    Boolean(
+      game.runner_first
+    );
 
 
   const hadSecond =
-  Boolean(
-    game.runner_second
-  );
+    Boolean(
+      game.runner_second
+    );
 
 
   const hadThird =
-  Boolean(
-    game.runner_third
-  );
+    Boolean(
+      game.runner_third
+    );
 
 
   let runs =
-  0;
+    0;
 
 
   let nextFirst =
-  true;
+    true;
 
 
   let nextSecond =
-  false;
+    false;
 
 
   let nextThird =
-  false;
+    false;
 
 
-  if(
+  if (
     hadThird
-  ){
+  ) {
 
-    if(
+    const scored =
       await askYesNo(
         "Did the runner from 3B score?"
-      )
-    ){
+      );
+
+
+    if (
+      scored
+    ) {
 
       runs++;
 
-    }else{
+
+      notes.push(
+        "Runner from 3B scored."
+      );
+
+    } else {
 
       nextThird =
-      true;
+        true;
+
+
+      notes.push(
+        "Runner from 3B held."
+      );
+
     }
+
   }
 
 
-  if(
+  if (
     hadSecond
-  ){
+  ) {
 
-    if(
+    const scored =
       await askYesNo(
         "Did the runner from 2B score?"
-      )
-    ){
+      );
+
+
+    if (
+      scored
+    ) {
 
       runs++;
 
-    }else{
+
+      notes.push(
+        "Runner from 2B scored."
+      );
+
+    } else {
 
       nextThird =
-      true;
+        true;
+
+
+      notes.push(
+        "Runner from 2B advanced to 3B."
+      );
+
     }
+
   }
 
 
-  if(
+  if (
     hadFirst
-  ){
+  ) {
 
-    if(
-      !nextThird &&
-      await askYesNo(
-        "Did the runner from 1B advance to 3B?"
-      )
-    ){
+    if (
+      !nextThird
+    ) {
 
-      nextThird =
-      true;
+      const advanced =
+        await askYesNo(
+          "Did the runner from 1B advance to 3B?"
+        );
 
-    }else{
+
+      if (
+        advanced
+      ) {
+
+        nextThird =
+          true;
+
+
+        notes.push(
+          "Runner from 1B advanced to 3B."
+        );
+
+      } else {
+
+        nextSecond =
+          true;
+
+
+        notes.push(
+          "Runner from 1B advanced to 2B."
+        );
+
+      }
+
+
+    } else {
 
       nextSecond =
-      true;
+        true;
+
+
+      notes.push(
+        "Runner from 1B advanced to 2B."
+      );
+
     }
+
   }
 
 
   const pitchField =
-  activePitchField();
+    activePitchField();
 
 
   const scoreField =
-  battingScoreField();
+    battingScoreField();
 
 
   const success =
-  await updateGame({
+    await updateGame({
 
-    [pitchField]:
-
-    Number(
-      game[
-        pitchField
-      ] ||
-      0
-    ) +
-    1,
-
-    [scoreField]:
-
-    Number(
-      game[
-        scoreField
-      ] ||
-      0
-    ) +
-    runs,
-
-    balls:0,
-
-    strikes:0,
-
-    runner_first:
-    nextFirst,
-
-    runner_second:
-    nextSecond,
-
-    runner_third:
-    nextThird
-  });
+      [pitchField]:
+        Number(
+          game[
+            pitchField
+          ] ||
+          0
+        ) + 1,
 
 
-  if(
+      [scoreField]:
+        Number(
+          game[
+            scoreField
+          ] ||
+          0
+        ) + runs,
+
+
+      balls:
+        0,
+
+
+      strikes:
+        0,
+
+
+      runner_first:
+        nextFirst,
+
+
+      runner_second:
+        nextSecond,
+
+
+      runner_third:
+        nextThird
+
+    });
+
+
+  if (
     success
-  ){
+  ) {
+
+    const after =
+      snapshotGame();
+
+
+    await logGameEvent({
+
+      eventType:
+        "SINGLE",
+
+
+      description:
+        playerLabel(
+          batter
+        ) +
+        " singled. " +
+        notes.join(
+          " "
+        ),
+
+
+      runs:
+        runs,
+
+
+      rbi:
+        runs,
+
+
+      batter:
+        batter,
+
+
+      side:
+        side,
+
+
+      before:
+        before,
+
+
+      after:
+        after
+
+    });
+
 
     await completePlateAppearance(
-      eventSide
+      side
     );
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    DOUBLE
-========================= */
+========================================================= */
 
-async function doubleHit(){
+async function doubleHit() {
 
-  const eventSide =
-  battingSide();
+  const side =
+    battingSide();
+
+
+  const batter =
+    getCurrentBatterForSide(
+      side
+    );
+
+
+  const before =
+    snapshotGame();
+
+
+  const notes =
+    [];
 
 
   let runs =
-  0;
+    0;
 
 
   let nextThird =
-  false;
+    false;
 
 
-  if(
+  if (
     game.runner_third
-  ){
+  ) {
 
     runs++;
+
+
+    notes.push(
+      "Runner from 3B scored."
+    );
+
   }
 
 
-  if(
+  if (
     game.runner_second
-  ){
+  ) {
 
     runs++;
+
+
+    notes.push(
+      "Runner from 2B scored."
+    );
+
   }
 
 
-  if(
+  if (
     game.runner_first
-  ){
+  ) {
 
-    if(
+    const scored =
       await askYesNo(
         "Did the runner from 1B score?"
-      )
-    ){
+      );
+
+
+    if (
+      scored
+    ) {
 
       runs++;
 
-    }else{
+
+      notes.push(
+        "Runner from 1B scored."
+      );
+
+    } else {
 
       nextThird =
-      true;
+        true;
+
+
+      notes.push(
+        "Runner from 1B advanced to 3B."
+      );
+
     }
+
   }
 
 
   const pitchField =
-  activePitchField();
+    activePitchField();
 
 
   const scoreField =
-  battingScoreField();
+    battingScoreField();
 
 
   const success =
-  await updateGame({
+    await updateGame({
 
-    [pitchField]:
-
-    Number(
-      game[
-        pitchField
-      ] ||
-      0
-    ) +
-    1,
-
-    [scoreField]:
-
-    Number(
-      game[
-        scoreField
-      ] ||
-      0
-    ) +
-    runs,
-
-    balls:0,
-
-    strikes:0,
-
-    runner_first:false,
-
-    runner_second:true,
-
-    runner_third:
-    nextThird
-  });
+      [pitchField]:
+        Number(
+          game[
+            pitchField
+          ] ||
+          0
+        ) + 1,
 
 
-  if(
+      [scoreField]:
+        Number(
+          game[
+            scoreField
+          ] ||
+          0
+        ) + runs,
+
+
+      balls:
+        0,
+
+
+      strikes:
+        0,
+
+
+      runner_first:
+        false,
+
+
+      runner_second:
+        true,
+
+
+      runner_third:
+        nextThird
+
+    });
+
+
+  if (
     success
-  ){
+  ) {
+
+    const after =
+      snapshotGame();
+
+
+    await logGameEvent({
+
+      eventType:
+        "DOUBLE",
+
+
+      description:
+        playerLabel(
+          batter
+        ) +
+        " doubled. " +
+        notes.join(
+          " "
+        ),
+
+
+      runs:
+        runs,
+
+
+      rbi:
+        runs,
+
+
+      batter:
+        batter,
+
+
+      side:
+        side,
+
+
+      before:
+        before,
+
+
+      after:
+        after
+
+    });
+
 
     await completePlateAppearance(
-      eventSide
+      side
     );
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    TRIPLE
-========================= */
+========================================================= */
 
-async function tripleHit(){
+async function tripleHit() {
 
-  const eventSide =
-  battingSide();
+  const side =
+    battingSide();
+
+
+  const batter =
+    getCurrentBatterForSide(
+      side
+    );
+
+
+  const before =
+    snapshotGame();
 
 
   let runs =
-  0;
+    0;
 
 
-  if(
+  if (
     game.runner_first
   ) runs++;
 
 
-  if(
+  if (
     game.runner_second
   ) runs++;
 
 
-  if(
+  if (
     game.runner_third
   ) runs++;
 
 
   const pitchField =
-  activePitchField();
+    activePitchField();
 
 
   const scoreField =
-  battingScoreField();
+    battingScoreField();
 
 
   const success =
-  await updateGame({
+    await updateGame({
 
-    [pitchField]:
-
-    Number(
-      game[
-        pitchField
-      ] ||
-      0
-    ) +
-    1,
-
-    [scoreField]:
-
-    Number(
-      game[
-        scoreField
-      ] ||
-      0
-    ) +
-    runs,
-
-    balls:0,
-
-    strikes:0,
-
-    runner_first:false,
-
-    runner_second:false,
-
-    runner_third:true
-  });
+      [pitchField]:
+        Number(
+          game[
+            pitchField
+          ] ||
+          0
+        ) + 1,
 
 
-  if(
+      [scoreField]:
+        Number(
+          game[
+            scoreField
+          ] ||
+          0
+        ) + runs,
+
+
+      balls:
+        0,
+
+
+      strikes:
+        0,
+
+
+      runner_first:
+        false,
+
+
+      runner_second:
+        false,
+
+
+      runner_third:
+        true
+
+    });
+
+
+  if (
     success
-  ){
+  ) {
+
+    const after =
+      snapshotGame();
+
+
+    await logGameEvent({
+
+      eventType:
+        "TRIPLE",
+
+
+      description:
+        playerLabel(
+          batter
+        ) +
+        " tripled." +
+        (
+          runs
+            ? " " +
+              runs +
+              " run(s) scored."
+
+            : ""
+        ),
+
+
+      runs:
+        runs,
+
+
+      rbi:
+        runs,
+
+
+      batter:
+        batter,
+
+
+      side:
+        side,
+
+
+      before:
+        before,
+
+
+      after:
+        after
+
+    });
+
 
     await completePlateAppearance(
-      eventSide
+      side
     );
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    HOME RUN
-========================= */
+========================================================= */
 
-async function homeRun(){
+async function homeRun() {
 
-  const eventSide =
-  battingSide();
+  const side =
+    battingSide();
+
+
+  const batter =
+    getCurrentBatterForSide(
+      side
+    );
+
+
+  const before =
+    snapshotGame();
 
 
   let runs =
-  1;
+    1;
 
 
-  if(
+  if (
     game.runner_first
   ) runs++;
 
 
-  if(
+  if (
     game.runner_second
   ) runs++;
 
 
-  if(
+  if (
     game.runner_third
   ) runs++;
 
 
   const pitchField =
-  activePitchField();
+    activePitchField();
 
 
   const scoreField =
-  battingScoreField();
+    battingScoreField();
 
 
   const success =
-  await updateGame({
+    await updateGame({
 
-    [pitchField]:
-
-    Number(
-      game[
-        pitchField
-      ] ||
-      0
-    ) +
-    1,
-
-    [scoreField]:
-
-    Number(
-      game[
-        scoreField
-      ] ||
-      0
-    ) +
-    runs,
-
-    balls:0,
-
-    strikes:0,
-
-    runner_first:false,
-
-    runner_second:false,
-
-    runner_third:false
-  });
+      [pitchField]:
+        Number(
+          game[
+            pitchField
+          ] ||
+          0
+        ) + 1,
 
 
-  if(
+      [scoreField]:
+        Number(
+          game[
+            scoreField
+          ] ||
+          0
+        ) + runs,
+
+
+      balls:
+        0,
+
+
+      strikes:
+        0,
+
+
+      runner_first:
+        false,
+
+
+      runner_second:
+        false,
+
+
+      runner_third:
+        false
+
+    });
+
+
+  if (
     success
-  ){
+  ) {
+
+    const after =
+      snapshotGame();
+
+
+    await logGameEvent({
+
+      eventType:
+        "HOME_RUN",
+
+
+      description:
+        playerLabel(
+          batter
+        ) +
+        " homered. " +
+        runs +
+        "-run home run.",
+
+
+      runs:
+        runs,
+
+
+      rbi:
+        runs,
+
+
+      batter:
+        batter,
+
+
+      side:
+        side,
+
+
+      before:
+        before,
+
+
+      after:
+        after
+
+    });
+
 
     await completePlateAppearance(
-      eventSide
+      side
     );
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    ERROR
-========================= */
+========================================================= */
 
-async function errorPlay(){
+async function errorPlay() {
 
-  const eventSide =
-  battingSide();
+  const side =
+    battingSide();
+
+
+  const batter =
+    getCurrentBatterForSide(
+      side
+    );
+
+
+  const before =
+    snapshotGame();
+
+
+  const notes =
+    [];
 
 
   let runs =
-  0;
+    0;
 
 
   let nextFirst =
-  true;
+    true;
 
 
   let nextSecond =
-  false;
+    false;
 
 
   let nextThird =
-  false;
+    false;
 
 
-  if(
+  if (
     game.runner_third
-  ){
+  ) {
 
-    if(
+    if (
       await askYesNo(
         "Did runner from 3B score?"
       )
-    ){
+    ) {
 
       runs++;
 
-    }else{
+
+      notes.push(
+        "Runner from 3B scored."
+      );
+
+    } else {
 
       nextThird =
-      true;
+        true;
+
     }
+
   }
 
 
-  if(
+  if (
     game.runner_second
-  ){
+  ) {
 
-    if(
+    if (
       await askYesNo(
         "Did runner from 2B score?"
       )
-    ){
+    ) {
 
       runs++;
 
-    }else{
+
+      notes.push(
+        "Runner from 2B scored."
+      );
+
+    } else {
 
       nextThird =
-      true;
+        true;
+
     }
+
   }
 
 
-  if(
+  if (
     game.runner_first
-  ){
+  ) {
 
-    if(
+    if (
       !nextThird &&
       await askYesNo(
         "Did runner from 1B reach 3B?"
       )
-    ){
+    ) {
 
       nextThird =
-      true;
+        true;
 
-    }else{
+
+      notes.push(
+        "Runner from 1B advanced to 3B."
+      );
+
+    } else {
 
       nextSecond =
-      true;
+        true;
+
     }
+
   }
 
 
   const pitchField =
-  activePitchField();
+    activePitchField();
 
 
   const scoreField =
-  battingScoreField();
+    battingScoreField();
 
 
   const success =
-  await updateGame({
+    await updateGame({
 
-    [pitchField]:
-
-    Number(
-      game[
-        pitchField
-      ] ||
-      0
-    ) +
-    1,
-
-    [scoreField]:
-
-    Number(
-      game[
-        scoreField
-      ] ||
-      0
-    ) +
-    runs,
-
-    balls:0,
-
-    strikes:0,
-
-    runner_first:
-    nextFirst,
-
-    runner_second:
-    nextSecond,
-
-    runner_third:
-    nextThird
-  });
+      [pitchField]:
+        Number(
+          game[
+            pitchField
+          ] ||
+          0
+        ) + 1,
 
 
-  if(
+      [scoreField]:
+        Number(
+          game[
+            scoreField
+          ] ||
+          0
+        ) + runs,
+
+
+      balls:
+        0,
+
+
+      strikes:
+        0,
+
+
+      runner_first:
+        nextFirst,
+
+
+      runner_second:
+        nextSecond,
+
+
+      runner_third:
+        nextThird
+
+    });
+
+
+  if (
     success
-  ){
+  ) {
+
+    const after =
+      snapshotGame();
+
+
+    await logGameEvent({
+
+      eventType:
+        "ERROR",
+
+
+      description:
+        playerLabel(
+          batter
+        ) +
+        " reached on error. " +
+        notes.join(
+          " "
+        ),
+
+
+      runs:
+        runs,
+
+
+      rbi:
+        0,
+
+
+      batter:
+        batter,
+
+
+      side:
+        side,
+
+
+      before:
+        before,
+
+
+      after:
+        after
+
+    });
+
 
     await completePlateAppearance(
-      eventSide
+      side
     );
+
   }
+
 }
 
 
-/* =========================
-   FIELDER'S CHOICE
-========================= */
+/* =========================================================
+   FC
+========================================================= */
 
-async function fieldersChoice(){
+async function fieldersChoice() {
 
-  const eventSide =
-  battingSide();
+  const side =
+    battingSide();
+
+
+  const batter =
+    getCurrentBatterForSide(
+      side
+    );
+
+
+  const before =
+    snapshotGame();
 
 
   const hadFirst =
-  Boolean(
-    game.runner_first
-  );
+    Boolean(
+      game.runner_first
+    );
 
 
   const hadSecond =
-  Boolean(
-    game.runner_second
-  );
+    Boolean(
+      game.runner_second
+    );
 
 
   const hadThird =
-  Boolean(
-    game.runner_third
-  );
+    Boolean(
+      game.runner_third
+    );
 
 
   const options =
-  [];
+    [];
 
 
-  if(
+  if (
     hadFirst
-  ){
+  ) {
 
     options.push({
 
-      label:"OUT AT 2B",
+      label:
+        "OUT AT 2B",
 
-      value:"second",
 
-      className:"blue"
+      value:
+        "second",
+
+
+      className:
+        "blue"
+
     });
+
   }
 
 
-  if(
+  if (
     hadSecond
-  ){
+  ) {
 
     options.push({
 
-      label:"OUT AT 3B",
+      label:
+        "OUT AT 3B",
 
-      value:"third",
 
-      className:"purple"
+      value:
+        "third",
+
+
+      className:
+        "purple"
+
     });
+
   }
 
 
-  if(
+  if (
     hadThird
-  ){
+  ) {
 
     options.push({
 
-      label:"OUT AT HOME",
+      label:
+        "OUT AT HOME",
 
-      value:"home",
 
-      className:"orange"
+      value:
+        "home",
+
+
+      className:
+        "orange"
+
     });
+
   }
 
 
   options.push({
 
-    label:"BATTER OUT",
+    label:
+      "BATTER OUT",
 
-    value:"batter",
 
-    className:"red"
+    value:
+      "batter",
+
+
+    className:
+      "red"
+
   });
 
 
   const result =
-  await askChoice(
-    "Where was the out?",
-    options
-  );
+    await askChoice(
+      "Where was the out?",
+      options
+    );
 
 
   let runs =
-  0;
+    0;
 
 
   let nextFirst =
-  false;
+    false;
 
 
   let nextSecond =
-  false;
+    false;
 
 
   let nextThird =
-  false;
+    false;
 
 
-  if(
+  if (
     result ===
     "second"
-  ){
+  ) {
 
     nextFirst =
-    true;
-
-
-    if(
-      hadSecond
-    ){
-
-      if(
-        await askYesNo(
-          "Did runner from 2B advance to 3B?"
-        )
-      ){
-
-        nextThird =
-        true;
-
-      }else{
-
-        nextSecond =
-        true;
-      }
-    }
-
-
-    if(
-      hadThird
-    ){
-
-      if(
-        await askYesNo(
-          "Did runner from 3B score?"
-        )
-      ){
-
-        runs++;
-
-      }else{
-
-        nextThird =
-        true;
-      }
-    }
-  }
-
-
-  if(
-    result ===
-    "third"
-  ){
-
-    nextFirst =
-    true;
-
-
-    if(
-      hadFirst
-    ){
-
-      nextSecond =
       true;
-    }
-
-
-    if(
-      hadThird
-    ){
-
-      if(
-        await askYesNo(
-          "Did runner from 3B score?"
-        )
-      ){
-
-        runs++;
-
-      }else{
-
-        nextThird =
-        true;
-      }
-    }
-  }
-
-
-  if(
-    result ===
-    "home"
-  ){
-
-    nextFirst =
-    true;
-
-
-    if(
-      hadFirst
-    ){
-
-      nextSecond =
-      true;
-    }
-
-
-    if(
-      hadSecond
-    ){
-
-      nextThird =
-      true;
-    }
-  }
-
-
-  if(
-    result ===
-    "batter"
-  ){
-
-    nextFirst =
-    hadFirst;
 
 
     nextSecond =
-    hadSecond;
+      hadSecond;
 
 
     nextThird =
-    hadThird;
+      hadThird;
+
+  }
+
+
+  if (
+    result ===
+    "third"
+  ) {
+
+    nextFirst =
+      true;
+
+
+    nextSecond =
+      hadFirst;
+
+
+    nextThird =
+      hadThird;
+
+  }
+
+
+  if (
+    result ===
+    "home"
+  ) {
+
+    nextFirst =
+      true;
+
+
+    nextSecond =
+      hadFirst;
+
+
+    nextThird =
+      hadSecond;
+
+  }
+
+
+  if (
+    result ===
+    "batter"
+  ) {
+
+    nextFirst =
+      hadFirst;
+
+
+    nextSecond =
+      hadSecond;
+
+
+    nextThird =
+      hadThird;
+
   }
 
 
   const pitchField =
-  activePitchField();
+    activePitchField();
 
 
   const scoreField =
-  battingScoreField();
+    battingScoreField();
 
 
   const success =
-  await processOut({
+    await processOut({
 
-    [pitchField]:
-
-    Number(
-      game[
-        pitchField
-      ] ||
-      0
-    ) +
-    1,
-
-    [scoreField]:
-
-    Number(
-      game[
-        scoreField
-      ] ||
-      0
-    ) +
-    runs,
-
-    runner_first:
-    nextFirst,
-
-    runner_second:
-    nextSecond,
-
-    runner_third:
-    nextThird
-  });
+      [pitchField]:
+        Number(
+          game[
+            pitchField
+          ] ||
+          0
+        ) + 1,
 
 
-  if(
+      [scoreField]:
+        Number(
+          game[
+            scoreField
+          ] ||
+          0
+        ) + runs,
+
+
+      runner_first:
+        nextFirst,
+
+
+      runner_second:
+        nextSecond,
+
+
+      runner_third:
+        nextThird
+
+    });
+
+
+  if (
     success
-  ){
+  ) {
+
+    const after =
+      snapshotGame();
+
+
+    await logGameEvent({
+
+      eventType:
+        "FIELDERS_CHOICE",
+
+
+      description:
+        playerLabel(
+          batter
+        ) +
+        " reached on fielder's choice. Out: " +
+        result +
+        ".",
+
+
+      runs:
+        runs,
+
+
+      rbi:
+        runs,
+
+
+      batter:
+        batter,
+
+
+      side:
+        side,
+
+
+      before:
+        before,
+
+
+      after:
+        after
+
+    });
+
 
     await completePlateAppearance(
-      eventSide
+      side
     );
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    SAC FLY
-========================= */
+========================================================= */
 
-async function sacFly(){
+async function sacFly() {
 
-  const eventSide =
-  battingSide();
+  const side =
+    battingSide();
+
+
+  const batter =
+    getCurrentBatterForSide(
+      side
+    );
+
+
+  const before =
+    snapshotGame();
 
 
   let runs =
-  0;
+    0;
 
 
   let third =
-  Boolean(
-    game.runner_third
-  );
+    Boolean(
+      game.runner_third
+    );
 
 
-  if(
+  if (
     third
-  ){
+  ) {
 
-    if(
+    if (
       await askYesNo(
         "Did runner from 3B score?"
       )
-    ){
+    ) {
 
       runs++;
 
 
       third =
-      false;
+        false;
+
     }
+
   }
 
 
   const pitchField =
-  activePitchField();
+    activePitchField();
 
 
   const scoreField =
-  battingScoreField();
+    battingScoreField();
 
 
   const success =
-  await processOut({
+    await processOut({
 
-    [pitchField]:
-
-    Number(
-      game[
-        pitchField
-      ] ||
-      0
-    ) +
-    1,
-
-    [scoreField]:
-
-    Number(
-      game[
-        scoreField
-      ] ||
-      0
-    ) +
-    runs,
-
-    runner_third:
-    third
-  });
+      [pitchField]:
+        Number(
+          game[
+            pitchField
+          ] ||
+          0
+        ) + 1,
 
 
-  if(
+      [scoreField]:
+        Number(
+          game[
+            scoreField
+          ] ||
+          0
+        ) + runs,
+
+
+      runner_third:
+        third
+
+    });
+
+
+  if (
     success
-  ){
+  ) {
+
+    const after =
+      snapshotGame();
+
+
+    await logGameEvent({
+
+      eventType:
+        "SAC_FLY",
+
+
+      description:
+        playerLabel(
+          batter
+        ) +
+        " hit a sacrifice fly." +
+        (
+          runs
+            ? " Runner from 3B scored."
+
+            : ""
+        ),
+
+
+      runs:
+        runs,
+
+
+      rbi:
+        runs,
+
+
+      batter:
+        batter,
+
+
+      side:
+        side,
+
+
+      before:
+        before,
+
+
+      after:
+        after
+
+    });
+
 
     await completePlateAppearance(
-      eventSide
+      side
     );
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    DOUBLE PLAY
-========================= */
+========================================================= */
 
-async function doublePlay(){
+async function doublePlay() {
 
-  const eventSide =
-  battingSide();
+  const side =
+    battingSide();
+
+
+  const batter =
+    getCurrentBatterForSide(
+      side
+    );
+
+
+  const before =
+    snapshotGame();
 
 
   const pitchField =
-  activePitchField();
+    activePitchField();
 
 
   const changes = {
 
     [pitchField]:
+      Number(
+        game[
+          pitchField
+        ] ||
+        0
+      ) + 1,
 
-    Number(
-      game[
-        pitchField
-      ] ||
+
+    balls:
+      0,
+
+
+    strikes:
       0
-    ) +
-    1,
 
-    balls:0,
-
-    strikes:0
   };
 
 
-  if(
+  if (
     game.runner_first
-  ){
+  ) {
 
     changes.runner_first =
-    false;
+      false;
+
   }
 
 
   const success =
-  await processMultipleOuts(
-    2,
-    changes
-  );
+    await processMultipleOuts(
+      2,
+      changes
+    );
 
 
-  if(
+  if (
     success
-  ){
+  ) {
+
+    const after =
+      snapshotGame();
+
+
+    await logGameEvent({
+
+      eventType:
+        "DOUBLE_PLAY",
+
+
+      description:
+        playerLabel(
+          batter
+        ) +
+        " grounded into a double play.",
+
+
+      runs:
+        0,
+
+
+      rbi:
+        0,
+
+
+      batter:
+        batter,
+
+
+      side:
+        side,
+
+
+      before:
+        before,
+
+
+      after:
+        after
+
+    });
+
 
     await completePlateAppearance(
-      eventSide
+      side
     );
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    NORMAL OUT
-========================= */
+========================================================= */
 
-async function ballInPlayOut(){
+async function ballInPlayOut() {
 
-  const eventSide =
-  battingSide();
+  const side =
+    battingSide();
+
+
+  const batter =
+    getCurrentBatterForSide(
+      side
+    );
+
+
+  const before =
+    snapshotGame();
 
 
   const pitchField =
-  activePitchField();
+    activePitchField();
 
 
   const success =
-  await processOut({
+    await processOut({
 
-    [pitchField]:
+      [pitchField]:
+        Number(
+          game[
+            pitchField
+          ] ||
+          0
+        ) + 1
 
-    Number(
-      game[
-        pitchField
-      ] ||
-      0
-    ) +
-    1
-  });
+    });
 
 
-  if(
+  if (
     success
-  ){
+  ) {
+
+    const after =
+      snapshotGame();
+
+
+    await logGameEvent({
+
+      eventType:
+        "OUT",
+
+
+      description:
+        playerLabel(
+          batter
+        ) +
+        " put the ball in play and was retired.",
+
+
+      runs:
+        0,
+
+
+      rbi:
+        0,
+
+
+      batter:
+        batter,
+
+
+      side:
+        side,
+
+
+      before:
+        before,
+
+
+      after:
+        after
+
+    });
+
 
     await completePlateAppearance(
-      eventSide
+      side
     );
+
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    OUT PROCESSING
-========================= */
+========================================================= */
 
 async function processOut(
   extraChanges = {}
-){
+) {
 
   return await processMultipleOuts(
     1,
     extraChanges
   );
+
 }
 
 
 async function processMultipleOuts(
   amount,
   extraChanges = {}
-){
+) {
 
   const newOuts =
-  Number(
-    game.outs ||
-    0
-  ) +
-  amount;
+    Number(
+      game.outs ||
+      0
+    ) +
+    amount;
 
 
-  if(
+  if (
     newOuts >=
     3
-  ){
+  ) {
 
     let nextHalf;
 
 
     let nextInning =
-    Number(
-      game.inning
-    );
+      Number(
+        game.inning
+      );
 
 
-    if(
+    if (
       game.inning_half ===
       "top"
-    ){
+    ) {
 
       nextHalf =
-      "bottom";
+        "bottom";
 
-    }else{
+    } else {
 
       nextHalf =
-      "top";
+        "top";
 
 
       nextInning++;
+
     }
 
 
@@ -5890,23 +8348,38 @@ async function processMultipleOuts(
 
       ...extraChanges,
 
-      outs:0,
 
-      balls:0,
+      outs:
+        0,
 
-      strikes:0,
 
-      runner_first:false,
+      balls:
+        0,
 
-      runner_second:false,
 
-      runner_third:false,
+      strikes:
+        0,
+
+
+      runner_first:
+        false,
+
+
+      runner_second:
+        false,
+
+
+      runner_third:
+        false,
+
 
       inning_half:
-      nextHalf,
+        nextHalf,
+
 
       inning:
-      nextInning
+        nextInning
+
     });
 
   }
@@ -5916,284 +8389,318 @@ async function processMultipleOuts(
 
     ...extraChanges,
 
+
     outs:
-    newOuts,
+      newOuts,
 
-    balls:0,
 
-    strikes:0
+    balls:
+      0,
+
+
+    strikes:
+      0
+
   });
+
 }
 
 
-/* =========================
-   MANUAL CONTROLS
-========================= */
+/* =========================================================
+   MANUAL
+========================================================= */
 
 async function manualOut(
   amount = 1
-){
+) {
 
-  if(
-    amount >
-    0
-  ){
+  if (
+    amount > 0
+  ) {
 
     await processOut();
 
 
     return;
+
   }
 
 
   await updateGame({
 
     outs:
+      Math.max(
+        0,
+        Number(
+          game.outs
+        ) - 1
+      )
 
-    Math.max(
-      0,
-      Number(
-        game.outs
-      ) -
-      1
-    )
   });
+
 }
 
 
-async function resetCount(){
+async function resetCount() {
 
   await updateGame({
 
-    balls:0,
+    balls:
+      0,
 
-    strikes:0
+
+    strikes:
+      0
+
   });
+
 }
 
 
 async function manualCount(
   field,
   amount
-){
+) {
 
   const max =
-  field ===
-  "balls"
+    field ===
+    "balls"
 
-  ? 3
-  : 2;
+      ? 3
+
+      : 2;
 
 
   let value =
-  Number(
-    game[
-      field
-    ]
-  ) +
-  amount;
+    Number(
+      game[
+        field
+      ]
+    ) +
+    amount;
 
 
   value =
-  Math.max(
-    0,
-    Math.min(
-      max,
-      value
-    )
-  );
+    Math.max(
+      0,
+      Math.min(
+        max,
+        value
+      )
+    );
 
 
   await updateGame({
 
     [field]:
-    value
+      value
+
   });
+
 }
 
 
 async function changeScore(
   side,
   amount
-){
+) {
 
   const field =
-  side +
-  "_score";
+    side +
+    "_score";
 
 
   await updateGame({
 
     [field]:
+      Math.max(
+        0,
+        Number(
+          game[
+            field
+          ]
+        ) +
+        amount
+      )
 
-    Math.max(
-      0,
-      Number(
-        game[
-          field
-        ]
-      ) +
-      amount
-    )
   });
+
 }
 
 
-async function toggleHalf(){
+async function toggleHalf() {
 
   await updateGame({
 
     inning_half:
+      game.inning_half ===
+      "top"
 
-    game.inning_half ===
-    "top"
+        ? "bottom"
 
-    ? "bottom"
-    : "top",
+        : "top",
 
-    balls:0,
 
-    strikes:0,
+    balls:
+      0,
 
-    outs:0,
 
-    runner_first:false,
+    strikes:
+      0,
 
-    runner_second:false,
 
-    runner_third:false
+    outs:
+      0,
+
+
+    runner_first:
+      false,
+
+
+    runner_second:
+      false,
+
+
+    runner_third:
+      false
+
   });
+
 }
 
 
 async function changeInning(
   amount
-){
+) {
 
   await updateGame({
 
     inning:
+      Math.max(
+        1,
+        Number(
+          game.inning
+        ) +
+        amount
+      )
 
-    Math.max(
-      1,
-      Number(
-        game.inning
-      ) +
-      amount
-    )
   });
+
 }
 
 
 async function toggleBase(
   field
-){
+) {
 
   await updateGame({
 
     [field]:
+      !game[
+        field
+      ]
 
-    !game[
-      field
-    ]
   });
+
 }
 
 
-/* =========================
+/* =========================================================
    PITCHERS
-========================= */
+========================================================= */
 
 async function savePitcher(
   side
-){
+) {
 
   const number =
-  document
-  .getElementById(
-    side +
-    "PitcherNumber"
-  )
-  .value
-  .trim();
+    document
+      .getElementById(
+        side +
+        "PitcherNumber"
+      )
+      .value
+      .trim();
 
 
   const name =
-  document
-  .getElementById(
-    side +
-    "PitcherName"
-  )
-  .value
-  .trim();
+    document
+      .getElementById(
+        side +
+        "PitcherName"
+      )
+      .value
+      .trim();
 
 
   await updateGame({
 
     [side +
-    "_pitcher_number"]:
+      "_pitcher_number"]:
+      number,
 
-    number,
 
     [side +
-    "_pitcher_name"]:
+      "_pitcher_name"]:
+      name
 
-    name
   });
+
 }
 
 
 async function adjustPitchCount(
   side,
   amount
-){
+) {
 
   const field =
-  side +
-  "_pitch_count";
+    side +
+    "_pitch_count";
 
 
   await updateGame({
 
     [field]:
+      Math.max(
+        0,
+        Number(
+          game[
+            field
+          ] ||
+          0
+        ) +
+        amount
+      )
 
-    Math.max(
-      0,
-      Number(
-        game[
-          field
-        ] ||
-        0
-      ) +
-      amount
-    )
   });
+
 }
 
 
 async function newPitcher(
   side
-){
+) {
 
   const number =
-  prompt(
-    "New pitcher jersey number:"
-  );
+    prompt(
+      "New pitcher jersey number:"
+    );
 
 
-  if(
+  if (
     number ===
     null
   ) return;
 
 
   const name =
-  prompt(
-    "New pitcher name:"
-  );
+    prompt(
+      "New pitcher name:"
+    );
 
 
-  if(
+  if (
     name ===
     null
   ) return;
@@ -6202,67 +8709,123 @@ async function newPitcher(
   await updateGame({
 
     [side +
-    "_pitcher_number"]:
+      "_pitcher_number"]:
+      number.trim(),
 
-    number.trim(),
-
-    [side +
-    "_pitcher_name"]:
-
-    name.trim(),
 
     [side +
-    "_pitch_count"]:
+      "_pitcher_name"]:
+      name.trim(),
 
-    0
+
+    [side +
+      "_pitch_count"]:
+      0
+
   });
+
 }
 
 
-/* =========================
-   REALTIME
-========================= */
+/* =========================================================
+   REALTIME GAME
+========================================================= */
 
 db
-.channel(
-  "calzadilla-live-" +
-  GAME_CODE
-)
-
-.on(
-
-  "postgres_changes",
-
-  {
-
-    event:
-    "UPDATE",
-
-    schema:
-    "public",
-
-    table:
-    "live_games",
-
-    filter:
-    "game_code=eq." +
+  .channel(
+    "calzadilla-live-" +
     GAME_CODE
-  },
+  )
 
-  payload => {
+  .on(
 
-    game =
-    payload.new;
+    "postgres_changes",
 
+    {
 
-    render();
-  }
-)
-
-.subscribe();
+      event:
+        "UPDATE",
 
 
-/* START */
+      schema:
+        "public",
+
+
+      table:
+        "live_games",
+
+
+      filter:
+        "game_code=eq." +
+        GAME_CODE
+
+    },
+
+
+    payload => {
+
+      game =
+        payload.new;
+
+
+      render();
+
+    }
+
+  )
+
+  .subscribe();
+
+
+/* =========================================================
+   REALTIME GAME LOG
+========================================================= */
+
+db
+  .channel(
+    "calzadilla-events-" +
+    GAME_CODE
+  )
+
+  .on(
+
+    "postgres_changes",
+
+    {
+
+      event:
+        "INSERT",
+
+
+      schema:
+        "public",
+
+
+      table:
+        "game_events",
+
+
+      filter:
+        "game_code=eq." +
+        GAME_CODE
+
+    },
+
+
+    () => {
+
+      loadGameEvents();
+
+    }
+
+  )
+
+  .subscribe();
+
+
+/* =========================================================
+   START
+========================================================= */
 
 loadGame();
 
